@@ -1,7 +1,7 @@
 import type { ApiUser, ApiBoleta, ApiStats, ApiPaginated } from "./types"
 import type { Boleta } from "./mock-data"
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
+const BASE = process.env.NEXT_PUBLIC_API_URL
 // ─── Error tipado ─────────────────────────────────────────────────────────────
 
 export class ApiError extends Error {

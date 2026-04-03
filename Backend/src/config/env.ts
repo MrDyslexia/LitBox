@@ -8,7 +8,12 @@ export const env = {
   port: Number(process.env.PORT ?? 3001),
   nodeEnv: process.env.NODE_ENV ?? "development",
   isDev: (process.env.NODE_ENV ?? "development") === "development",
-
+  cors: {
+    // Esto transforma el string del .env en un Array real de JS
+    origin: process.env.CORS_ORIGIN?.startsWith('[') 
+      ? JSON.parse(process.env.CORS_ORIGIN) 
+      : process.env.CORS_ORIGIN || '*'
+  },
   mongodb: {
     uri: process.env.MONGODB_URI ?? "mongodb://localhost:27017/litbox",
   },
@@ -16,10 +21,6 @@ export const env = {
   jwt: {
     secret: process.env.JWT_SECRET ?? "dev_secret_inseguro",
     expiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
-  },
-
-  cors: {
-    origin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
   },
 
   uploads: {
