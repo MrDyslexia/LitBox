@@ -1,0 +1,8 @@
+.claude
+ESTADO_SISTEMA.md
+./Backend/.env
+./Frontend/.env.local
+./Frontend/node_modules/
+./Backend/node_modules/
+./Frontend/cache/
+./Frontend/~/

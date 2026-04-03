@@ -1,0 +1,11 @@
+[install]
+# Registro por defecto
+registry = "https://registry.npmjs.org"
+
+[install.cache]
+# Directorio de caché compartido
+dir = "~/.bun/install/cache"
+
+[run]
+# Bun corre los scripts de Next.js directamente
+bun = true
