@@ -13,6 +13,7 @@ import {
   CalendarDays,
   MessageSquare,
   Filter,
+  Menu,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -43,6 +44,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
   const [comentario, setComentario] = useState("")
   const [resolving, setResolving] = useState(false)
   const [resolveError, setResolveError] = useState("")
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoadingData(true)
@@ -125,44 +127,66 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
   ]
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
+      {/* Mobile top header */}
+      <header
+        className="md:hidden flex items-center justify-between px-4 py-3 shrink-0"
+        style={{ background: "oklch(0.13 0.04 243)", borderBottom: "1px solid oklch(0.22 0.055 243)" }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}>
+            <FileText className="w-3.5 h-3.5 text-white" />
+          </div>
+          <span className="text-[13px] font-bold text-white tracking-tight">GastosApp</span>
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="text-white/80 hover:text-white transition-colors p-1"
+          aria-label="Abrir menú"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </header>
+
       <AppSidebar
         user={user}
         onLogout={onLogout}
         navItems={navItems}
         roleLabel="Auditor"
         roleColor="oklch(0.62 0.14 72)"
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
       />
 
       <main className="flex-1 overflow-y-auto">
         {/* Dashboard */}
         {view === "dashboard" && (
-          <div className="p-6 space-y-6 max-w-5xl">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Panel de auditoría</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Panel de auditoría</h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Gestiona y revisa las solicitudes de reembolso de todos los empleados.
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
               {[
-                { label: "Por revisar", value: displayStats.pendientes, icon: <Clock className="w-5 h-5" />, color: "oklch(0.62 0.14 72)", bg: "oklch(0.97 0.03 72)" },
-                { label: "Aprobadas", value: displayStats.aprobadas, icon: <CheckCircle className="w-5 h-5" />, color: "oklch(0.58 0.14 162)", bg: "oklch(0.95 0.04 162)" },
-                { label: "Rechazadas", value: displayStats.rechazadas, icon: <XCircle className="w-5 h-5" />, color: "oklch(0.55 0.22 27)", bg: "oklch(0.97 0.02 27)" },
+                { label: "Por revisar", value: displayStats.pendientes, icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.62 0.14 72)", bg: "oklch(0.97 0.03 72)" },
+                { label: "Aprobadas", value: displayStats.aprobadas, icon: <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.58 0.14 162)", bg: "oklch(0.95 0.04 162)" },
+                { label: "Rechazadas", value: displayStats.rechazadas, icon: <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.55 0.22 27)", bg: "oklch(0.97 0.02 27)" },
               ].map((stat) => (
                 <Card key={stat.label} className="border shadow-none">
-                  <CardContent className="p-5">
+                  <CardContent className="p-3 sm:p-5">
                     <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mb-2 sm:mb-3"
                       style={{ background: stat.bg }}
                     >
                       <span style={{ color: stat.color }}>{stat.icon}</span>
                     </div>
-                    <p className="text-3xl font-bold text-foreground">
+                    <p className="text-2xl sm:text-3xl font-bold text-foreground">
                       {loadingData ? "—" : stat.value}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">{stat.label}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -185,7 +209,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
                     {pendientes.slice(0, 5).map((boleta) => (
                       <button
                         key={boleta.id}
-                        className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-muted/50 transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-muted/50 transition-colors text-left"
                         onClick={() => { setSelected(boleta); setView("revision") }}
                       >
                         <div
@@ -195,8 +219,8 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
                           {boleta.empleadoNombre.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground">{boleta.empleadoNombre}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm font-medium text-foreground truncate">{boleta.empleadoNombre}</p>
+                          <p className="text-xs text-muted-foreground truncate">
                             {boleta.tipo} — {formatFecha(boleta.fecha)}
                           </p>
                         </div>
@@ -219,16 +243,16 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
 
         {/* Revisión view */}
         {view === "revision" && !selected && (
-          <div className="p-6 space-y-5 max-w-5xl">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-5xl">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Revisar boletas</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Revisar boletas</h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Selecciona una solicitud para revisar y actualizar su estado.
               </p>
             </div>
 
-            <div className="flex gap-3 flex-wrap">
-              <div className="relative flex-1 min-w-48">
+            <div className="space-y-3">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por empleado, tipo o ID..."
@@ -237,22 +261,24 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
                   className="pl-9 h-10"
                 />
               </div>
-              <div className="flex items-center gap-1 p-1 rounded-lg border" style={{ borderColor: "var(--border)" }}>
-                <Filter className="w-4 h-4 text-muted-foreground ml-2 mr-1" />
-                {statusFilters.map((f) => (
-                  <button
-                    key={f.value}
-                    onClick={() => setFilterStatus(f.value)}
-                    className="text-xs px-3 py-1.5 rounded-md font-medium transition-all"
-                    style={
-                      filterStatus === f.value
-                        ? { background: "var(--primary)", color: "white" }
-                        : { color: "var(--muted-foreground)" }
-                    }
-                  >
-                    {f.label}
-                  </button>
-                ))}
+              <div className="overflow-x-auto pb-1">
+                <div className="flex items-center gap-1 p-1 rounded-lg border w-max" style={{ borderColor: "var(--border)" }}>
+                  <Filter className="w-4 h-4 text-muted-foreground ml-2 mr-1 shrink-0" />
+                  {statusFilters.map((f) => (
+                    <button
+                      key={f.value}
+                      onClick={() => setFilterStatus(f.value)}
+                      className="text-xs px-3 py-2 rounded-md font-medium transition-all whitespace-nowrap"
+                      style={
+                        filterStatus === f.value
+                          ? { background: "var(--primary)", color: "white" }
+                          : { color: "var(--muted-foreground)" }
+                      }
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -271,17 +297,17 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
                     onClick={() => setSelected(boleta)}
                   >
                     <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-3">
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
                           style={{ background: "var(--primary)" }}
                         >
                           {boleta.empleadoNombre.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-semibold text-foreground">{boleta.empleadoNombre}</span>
-                            <span className="text-xs text-muted-foreground font-mono">{boleta.id}</span>
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-sm font-semibold text-foreground truncate">{boleta.empleadoNombre}</span>
+                            <p className="text-base font-bold text-foreground shrink-0">{formatMonto(boleta.monto)}</p>
                           </div>
                           <p className="text-xs text-muted-foreground">{boleta.tipo}</p>
                           <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -292,7 +318,6 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
                             <StatusBadge status={boleta.estado} size="sm" />
                           </div>
                         </div>
-                        <p className="text-base font-bold text-foreground shrink-0">{formatMonto(boleta.monto)}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -304,7 +329,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
 
         {/* Detalle para revisar */}
         {view === "revision" && selected && (
-          <div className="p-6 space-y-5 max-w-2xl">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-2xl">
             <button
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => { setSelected(null); setComentario(""); setResolveError("") }}
@@ -314,12 +339,12 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
 
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold text-foreground">{selected.tipo}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground">{selected.tipo}</h1>
                 <StatusBadge status={selected.estado} />
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Empleado: <span className="font-medium text-foreground">{selected.empleadoNombre}</span>
-                {" "}— <span className="font-mono">{selected.id}</span>
+                {" "}— <span className="font-mono text-xs">{selected.id}</span>
               </p>
             </div>
 
@@ -327,17 +352,17 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
             <Card className="border shadow-none overflow-hidden">
               {selected.imageUrl ? (
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}${selected.imageUrl}`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}${selected.imageUrl}`}
                   alt="Boleta"
-                  className="w-full object-contain max-h-64"
+                  className="w-full object-contain max-h-72"
                 />
               ) : (
                 <div
-                  className="h-52 flex items-center justify-center"
+                  className="h-40 flex items-center justify-center"
                   style={{ background: "var(--secondary)" }}
                 >
                   <div className="text-center space-y-2">
-                    <FileText className="w-14 h-14 text-muted-foreground mx-auto" />
+                    <FileText className="w-10 h-10 text-muted-foreground mx-auto" />
                     <p className="text-xs text-muted-foreground">Sin imagen adjunta</p>
                   </div>
                 </div>
@@ -345,7 +370,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
             </Card>
 
             <Card className="border shadow-none">
-              <CardContent className="p-5 space-y-4">
+              <CardContent className="p-4 sm:p-5 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   {[
                     { label: "Monto solicitado", value: formatMonto(selected.monto) },
@@ -369,7 +394,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
             {/* Acción del auditor */}
             {(selected.estado === "pendiente" || selected.estado === "en_revision") && (
               <Card className="border shadow-none">
-                <CardContent className="p-5 space-y-4">
+                <CardContent className="p-4 sm:p-5 space-y-4">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" style={{ color: "var(--accent)" }} />
                     <h3 className="text-sm font-semibold text-foreground">Resolución del auditor</h3>
@@ -377,8 +402,8 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium">Comentario (opcional)</Label>
                     <textarea
-                      className="w-full px-3 py-2 rounded-lg border text-sm bg-background text-foreground resize-none focus:outline-none focus:ring-2"
-                      style={{ borderColor: "var(--border)", minHeight: "80px" }}
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm bg-background text-foreground resize-none focus:outline-none focus:ring-2"
+                      style={{ borderColor: "var(--border)", minHeight: "90px" }}
                       placeholder="Escribe un comentario para el empleado..."
                       value={comentario}
                       onChange={(e) => setComentario(e.target.value)}
@@ -387,9 +412,9 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
                   {resolveError && (
                     <p className="text-sm text-destructive">{resolveError}</p>
                   )}
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <Button
-                      className="flex-1 h-10 font-semibold text-white"
+                      className="flex-1 h-11 font-semibold text-white"
                       style={{ background: "oklch(0.44 0.13 162)" }}
                       onClick={() => handleResolution("aprobar")}
                       disabled={resolving}
@@ -399,7 +424,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
                     </Button>
                     <Button
                       variant="outline"
-                      className="flex-1 h-10 font-semibold border-destructive"
+                      className="flex-1 h-11 font-semibold border-destructive"
                       style={{ color: "var(--destructive)", borderColor: "var(--destructive)" }}
                       onClick={() => handleResolution("rechazar")}
                       disabled={resolving}
@@ -414,7 +439,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
 
             {selected.comentarioAuditor && (
               <Card className="border shadow-none">
-                <CardContent className="p-5">
+                <CardContent className="p-4 sm:p-5">
                   <p className="text-xs font-semibold text-muted-foreground mb-2">Resolución registrada</p>
                   <p className="text-sm text-foreground leading-relaxed">{selected.comentarioAuditor}</p>
                   {selected.fechaRevision && (

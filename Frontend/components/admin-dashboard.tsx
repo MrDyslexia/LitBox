@@ -15,6 +15,7 @@ import {
   Shield,
   ChevronDown,
   DollarSign,
+  Menu,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,7 +39,7 @@ const roleColors: Record<ApiUser["rol"], string> = {
 const roleLabels: Record<ApiUser["rol"], string> = {
   empleado: "Empleado",
   auditor: "Auditor",
-  administrador: "Administrador",
+  administrador: "Admin",
 }
 
 interface AdminDashboardProps {
@@ -59,6 +60,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "empleado" as ApiUser["rol"] })
   const [savingUser, setSavingUser] = useState(false)
   const [userError, setUserError] = useState("")
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoadingData(true)
@@ -180,43 +182,65 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   ]
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
+      {/* Mobile top header */}
+      <header
+        className="md:hidden flex items-center justify-between px-4 py-3 shrink-0"
+        style={{ background: "oklch(0.13 0.04 243)", borderBottom: "1px solid oklch(0.22 0.055 243)" }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}>
+            <FileText className="w-3.5 h-3.5 text-white" />
+          </div>
+          <span className="text-[13px] font-bold text-white tracking-tight">GastosApp</span>
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="text-white/80 hover:text-white transition-colors p-1"
+          aria-label="Abrir menú"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </header>
+
       <AppSidebar
         user={user}
         onLogout={onLogout}
         navItems={navItems}
         roleLabel="Administrador"
         roleColor="oklch(0.28 0.1 243)"
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
       />
 
       <main className="flex-1 overflow-y-auto">
         {/* Dashboard */}
         {view === "dashboard" && (
-          <div className="p-6 space-y-6 max-w-6xl">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-6xl">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Panel de administración</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Panel de administración</h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Vista global del sistema de gestión de boletas.
               </p>
             </div>
 
             {/* KPI row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {[
-                { label: "Total boletas", value: displayStats.totalBoletas, icon: <FileText className="w-5 h-5" />, color: "var(--primary)", bg: "oklch(0.94 0.03 240)" },
-                { label: "Por resolver", value: displayStats.pendientes, icon: <Clock className="w-5 h-5" />, color: "oklch(0.62 0.14 72)", bg: "oklch(0.97 0.03 72)" },
-                { label: "Aprobadas", value: displayStats.aprobadas, icon: <CheckCircle className="w-5 h-5" />, color: "oklch(0.58 0.14 162)", bg: "oklch(0.95 0.04 162)" },
-                { label: "Rechazadas", value: displayStats.rechazadas, icon: <XCircle className="w-5 h-5" />, color: "oklch(0.55 0.22 27)", bg: "oklch(0.97 0.02 27)" },
+                { label: "Total boletas", value: displayStats.totalBoletas, icon: <FileText className="w-4 h-4 sm:w-5 sm:h-5" />, color: "var(--primary)", bg: "oklch(0.94 0.03 240)" },
+                { label: "Por resolver", value: displayStats.pendientes, icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.62 0.14 72)", bg: "oklch(0.97 0.03 72)" },
+                { label: "Aprobadas", value: displayStats.aprobadas, icon: <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.58 0.14 162)", bg: "oklch(0.95 0.04 162)" },
+                { label: "Rechazadas", value: displayStats.rechazadas, icon: <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.55 0.22 27)", bg: "oklch(0.97 0.02 27)" },
               ].map((s) => (
                 <Card key={s.label} className="border shadow-none">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: s.bg }}>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <span className="text-xs font-medium text-muted-foreground leading-tight">{s.label}</span>
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: s.bg }}>
                         <span style={{ color: s.color }}>{s.icon}</span>
                       </div>
                     </div>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">
                       {loadingData ? "—" : s.value}
                     </p>
                   </CardContent>
@@ -225,26 +249,26 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             </div>
 
             {/* Financial summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <Card className="border shadow-none" style={{ background: "var(--primary)" }}>
-                <CardContent className="p-5">
+                <CardContent className="p-4 sm:p-5">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-medium text-white/70">Monto total aprobado</p>
                     <DollarSign className="w-5 h-5 text-white/30" />
                   </div>
-                  <p className="text-3xl font-bold text-white">
+                  <p className="text-2xl sm:text-3xl font-bold text-white">
                     {loadingData ? "—" : formatMonto(displayStats.montoAprobado)}
                   </p>
                   <p className="text-xs text-white/50 mt-1">{displayStats.aprobadas} boletas aprobadas</p>
                 </CardContent>
               </Card>
               <Card className="border shadow-none" style={{ background: "oklch(0.97 0.03 72)" }}>
-                <CardContent className="p-5">
+                <CardContent className="p-4 sm:p-5">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-medium" style={{ color: "oklch(0.45 0.1 72)" }}>Monto pendiente de revisión</p>
+                    <p className="text-sm font-medium" style={{ color: "oklch(0.45 0.1 72)" }}>Monto pendiente</p>
                     <TrendingUp className="w-5 h-5" style={{ color: "oklch(0.62 0.14 72)" }} />
                   </div>
-                  <p className="text-3xl font-bold" style={{ color: "oklch(0.32 0.12 72)" }}>
+                  <p className="text-2xl sm:text-3xl font-bold" style={{ color: "oklch(0.32 0.12 72)" }}>
                     {loadingData ? "—" : formatMonto(displayStats.montoPendiente)}
                   </p>
                   <p className="text-xs mt-1" style={{ color: "oklch(0.55 0.1 72)" }}>{displayStats.pendientes} boletas en espera</p>
@@ -273,7 +297,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                 ) : (
                   <div className="divide-y divide-border">
                     {apiUsers.slice(0, 5).map((u) => (
-                      <div key={u._id} className="flex items-center gap-4 px-5 py-3">
+                      <div key={u._id} className="flex items-center gap-3 px-4 sm:px-5 py-3">
                         <div
                           className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
                           style={{ background: roleColors[u.rol] }}
@@ -285,7 +309,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                         </div>
                         <span
-                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white shrink-0"
                           style={{ background: roleColors[u.rol] }}
                         >
                           {roleLabels[u.rol]}
@@ -301,16 +325,16 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
         {/* Boletas view */}
         {view === "boletas" && (
-          <div className="p-6 space-y-5 max-w-6xl">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-6xl">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Todas las boletas</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Todas las boletas</h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Vista completa de todas las solicitudes de reembolso en el sistema.
               </p>
             </div>
 
-            <div className="flex gap-3 flex-wrap">
-              <div className="relative flex-1 min-w-48">
+            <div className="space-y-3">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por empleado, tipo o ID..."
@@ -319,34 +343,37 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                   className="pl-9 h-10"
                 />
               </div>
-              <div className="flex items-center gap-1 p-1 rounded-lg border" style={{ borderColor: "var(--border)" }}>
-                {statusFilters.map((f) => (
-                  <button
-                    key={f.value}
-                    onClick={() => setFilterStatus(f.value)}
-                    className="text-xs px-3 py-1.5 rounded-md font-medium transition-all"
-                    style={
-                      filterStatus === f.value
-                        ? { background: "var(--primary)", color: "white" }
-                        : { color: "var(--muted-foreground)" }
-                    }
-                  >
-                    {f.label}
-                  </button>
-                ))}
+              <div className="overflow-x-auto pb-1">
+                <div className="flex items-center gap-1 p-1 rounded-lg border w-max" style={{ borderColor: "var(--border)" }}>
+                  {statusFilters.map((f) => (
+                    <button
+                      key={f.value}
+                      onClick={() => setFilterStatus(f.value)}
+                      className="text-xs px-3 py-2 rounded-md font-medium transition-all whitespace-nowrap"
+                      style={
+                        filterStatus === f.value
+                          ? { background: "var(--primary)", color: "white" }
+                          : { color: "var(--muted-foreground)" }
+                      }
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             <Card className="border shadow-none overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[580px]">
                   <thead>
                     <tr style={{ background: "var(--secondary)", borderBottom: "1px solid var(--border)" }}>
-                      {["ID", "Empleado", "Tipo", "Monto", "Fecha", "Estado"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          {h}
-                        </th>
-                      ))}
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">ID</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Empleado</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Tipo</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Monto</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Fecha</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -363,16 +390,16 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                     ) : (
                       filteredBoletas.map((b) => (
                         <tr key={b.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{b.id}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden sm:table-cell">{b.id}</td>
                           <td className="px-4 py-3">
                             <div>
                               <p className="font-medium text-foreground">{b.empleadoNombre}</p>
-                              <p className="text-xs text-muted-foreground">{b.empleadoEmail}</p>
+                              <p className="text-xs text-muted-foreground hidden sm:block">{b.empleadoEmail}</p>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-foreground">{b.tipo}</td>
+                          <td className="px-4 py-3 text-foreground hidden sm:table-cell">{b.tipo}</td>
                           <td className="px-4 py-3 font-semibold text-foreground">{formatMonto(b.monto)}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{formatFecha(b.fecha)}</td>
+                          <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{formatFecha(b.fecha)}</td>
                           <td className="px-4 py-3">
                             <StatusBadge status={b.estado} size="sm" />
                           </td>
@@ -388,12 +415,12 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
         {/* Usuarios view */}
         {view === "usuarios" && (
-          <div className="p-6 space-y-5 max-w-4xl">
-            <div className="flex items-start justify-between gap-4">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-4xl">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Gestión de usuarios</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground">Gestión de usuarios</h1>
                 <p className="text-muted-foreground text-sm mt-1">
-                  Administra los accesos y roles de todos los usuarios de la plataforma.
+                  Administra los accesos y roles de todos los usuarios.
                 </p>
               </div>
               <Button
@@ -401,8 +428,8 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                 style={{ background: "var(--primary)" }}
                 onClick={() => { setShowNewUser(!showNewUser); setUserError("") }}
               >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Nuevo usuario
+                <UserPlus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nuevo usuario</span>
               </Button>
             </div>
 
@@ -421,7 +448,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           value={newUser.name}
                           onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                           required
-                          className="h-9"
+                          className="h-10"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -432,7 +459,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           value={newUser.email}
                           onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                           required
-                          className="h-9"
+                          className="h-10"
                         />
                       </div>
                     </div>
@@ -446,13 +473,13 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                           required
                           minLength={6}
-                          className="h-9"
+                          className="h-10"
                         />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Rol</Label>
                         <select
-                          className="w-full h-9 px-3 rounded-lg border text-sm bg-background text-foreground"
+                          className="w-full h-10 px-3 rounded-lg border text-sm bg-background text-foreground"
                           style={{ borderColor: "var(--border)" }}
                           value={newUser.role}
                           onChange={(e) => setNewUser({ ...newUser, role: e.target.value as ApiUser["rol"] })}
@@ -467,7 +494,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                     <div className="flex gap-3">
                       <Button
                         type="submit"
-                        className="h-9 font-semibold text-white"
+                        className="h-10 font-semibold text-white"
                         style={{ background: "var(--primary)" }}
                         disabled={savingUser}
                       >
@@ -476,7 +503,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-9"
+                        className="h-10"
                         onClick={() => setShowNewUser(false)}
                       >
                         Cancelar
@@ -499,14 +526,15 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
             <Card className="border shadow-none overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[480px]">
                   <thead>
                     <tr style={{ background: "var(--secondary)", borderBottom: "1px solid var(--border)" }}>
-                      {["Usuario", "Correo", "Rol", "Boletas", "Estado", "Acciones"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          {h}
-                        </th>
-                      ))}
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Usuario</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Correo</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rol</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Boletas</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Acc.</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -524,17 +552,17 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                       filteredUsers.map((u) => (
                         <tr key={u._id} className="hover:bg-muted/30 transition-colors">
                           <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5">
                               <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
                                 style={{ background: roleColors[u.rol] }}
                               >
                                 {u.avatar}
                               </div>
-                              <span className="font-medium text-foreground">{u.nombre}</span>
+                              <span className="font-medium text-foreground truncate max-w-[100px] sm:max-w-none">{u.nombre}</span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground text-xs">{u.email}</td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs hidden sm:table-cell">{u.email}</td>
                           <td className="px-4 py-3">
                             <span
                               className="text-[10px] font-semibold px-2 py-1 rounded-full text-white"
@@ -543,11 +571,11 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                               {roleLabels[u.rol]}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-foreground">{u.totalBoletas ?? 0}</td>
+                          <td className="px-4 py-3 text-foreground hidden sm:table-cell">{u.totalBoletas ?? 0}</td>
                           <td className="px-4 py-3">
                             <button
                               onClick={() => handleToggleUser(u._id)}
-                              className="text-xs font-medium px-2 py-0.5 rounded-full transition-opacity hover:opacity-70"
+                              className="text-xs font-medium px-2 py-0.5 rounded-full transition-opacity hover:opacity-70 whitespace-nowrap"
                               style={
                                 u.activo
                                   ? { background: "oklch(0.95 0.04 145)", color: "oklch(0.38 0.12 145)" }
@@ -559,12 +587,11 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                             </button>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                               <button
                                 className="p-1.5 rounded-md transition-colors hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                                 onClick={() => handleDeleteUser(u._id)}
                                 aria-label="Eliminar usuario"
-                                title="Eliminar usuario"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -572,7 +599,6 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                                 className="p-1.5 rounded-md transition-colors text-muted-foreground"
                                 style={{ color: "var(--accent)" }}
                                 aria-label="Ver permisos"
-                                title="Gestionar permisos"
                               >
                                 <Shield className="w-4 h-4" />
                               </button>

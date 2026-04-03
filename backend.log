@@ -1,0 +1,4 @@
+$ bun --watch src/index.ts
+✓ MongoDB conectado: localhost
+✓ LitBox Backend corriendo en http://localhost:3001
+✓ Documentación API en http://localhost:3001/docs

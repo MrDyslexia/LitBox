@@ -17,33 +17,50 @@ const app = new Elysia()
   // ── Plugins globales ──────────────────────────────────────────────────────
   .use(
     cors({
-      // Forzamos la verificación del origen manualmente si el array falla
       origin: (request) => {
         const origin = request.headers.get('origin');
+        
+        // Si no hay origen, permitir (peticiones del mismo origen)
+        if (!origin) return true;
+        
+        // Permitir localhost en desarrollo
+        if (env.isDev && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+          return true;
+        }
+        
+        // Verificar contra orígenes permitidos
         const allowedOrigins = Array.isArray(env.cors.origin) 
           ? env.cors.origin 
           : [env.cors.origin];
         
-        if (!origin || allowedOrigins.includes(origin)) {
+        const isAllowed = allowedOrigins.some(allowed => {
+          // Permitir coincidencia exacta o subdominios
+          if (allowed === origin) return true;
+          // Permitir si el origen termina con el dominio (para subdominios)
+          if (allowed.startsWith('*.') && origin.endsWith(allowed.slice(1))) return true;
+          return false;
+        });
+        
+        if (isAllowed) {
           return true;
         }
+        
+        console.warn(`CORS bloqueado: ${origin} no está en la lista permitida`);
         return false;
       },
       credentials: true,
       methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization", "Access-Control-Allow-Private-Network"],
-      preflight: true
+      allowedHeaders: ["Content-Type", "Authorization", "Access-Control-Allow-Private-Network", "Cookie"],
+      exposeHeaders: ["Set-Cookie"],
+      preflight: true,
+      maxAge: 86400, // 24 horas
     })
   )
-  // ESTE BLOQUE ES VITAL: Responde al navegador que sí permites acceso a localhost
+  
+  // Manejar Private Network Access (para localhost en desarrollo)
   .onRequest(({ request, set }) => {
     if (request.headers.get('access-control-request-private-network') === 'true') {
       set.headers['Access-Control-Allow-Private-Network'] = 'true';
-      // También debemos asegurar el origin en el preflight manual
-      const origin = request.headers.get('origin');
-      if (origin) {
-        set.headers['Access-Control-Allow-Origin'] = origin;
-      }
     }
   })
   .use(

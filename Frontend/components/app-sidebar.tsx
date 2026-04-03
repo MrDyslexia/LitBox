@@ -1,6 +1,6 @@
 "use client"
 
-import { Receipt, LogOut } from "lucide-react"
+import { Receipt, LogOut, X } from "lucide-react"
 import type { User } from "@/app/page"
 
 interface AppSidebarProps {
@@ -9,21 +9,19 @@ interface AppSidebarProps {
   readonly navItems: { icon: React.ReactNode; label: string; active?: boolean; onClick?: () => void }[]
   readonly roleLabel: string
   readonly roleColor: string
+  readonly mobileOpen?: boolean
+  readonly onMobileClose?: () => void
 }
 
-export default function AppSidebar({
-  user,
-  onLogout,
-  navItems,
-  roleLabel,
-  roleColor,
-}: AppSidebarProps) {
+function SidebarContent({
+  user, onLogout, navItems, roleLabel, roleColor, onMobileClose, showClose,
+}: AppSidebarProps & { showClose?: boolean }) {
   return (
     <aside
-      className="flex flex-col h-full w-60 shrink-0 font-sans"
+      className="flex flex-col h-full w-64 shrink-0 font-sans"
       style={{ background: "var(--sidebar)" }}
     >
-      {/* Logo bar — iTransporte style: dark band with white logo */}
+      {/* Logo bar */}
       <div
         className="flex items-center gap-2.5 px-5 py-4"
         style={{ background: "oklch(0.13 0.04 243)", borderBottom: "1px solid var(--sidebar-border)" }}
@@ -34,12 +32,21 @@ export default function AppSidebar({
         >
           <Receipt className="w-4 h-4 text-white" />
         </div>
-        <div className="leading-tight">
+        <div className="leading-tight flex-1 min-w-0">
           <span className="text-[13px] font-bold tracking-tight text-white">GastosApp</span>
           <p className="text-[9px] font-medium tracking-widest uppercase" style={{ color: "var(--accent)" }}>
             Reembolsos
           </p>
         </div>
+        {showClose && (
+          <button
+            onClick={onMobileClose}
+            className="text-white/60 hover:text-white transition-colors ml-1"
+            aria-label="Cerrar menú"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* User chip */}
@@ -52,30 +59,25 @@ export default function AppSidebar({
             {user.avatar}
           </div>
           <div className="min-w-0">
-            <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: "var(--sidebar-foreground)" }}>{user.name}</p>
+            <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: "var(--sidebar-foreground)" }}>
+              {user.name}
+            </p>
             <p className="text-[10px] font-medium mt-0.5" style={{ color: "var(--accent)" }}>{roleLabel}</p>
           </div>
         </div>
       </div>
 
-      {/* Nav items — iTransporte style: full-width with left accent border on active */}
+      {/* Nav items */}
       <nav className="flex-1 py-2 overflow-y-auto">
         {navItems.map((item, i) => (
           <button
             key={i}
-            onClick={item.onClick}
-            className="w-full flex items-center gap-3 px-5 py-2.5 text-[13px] font-medium transition-all text-left relative"
+            onClick={() => { item.onClick?.(); onMobileClose?.() }}
+            className="w-full flex items-center gap-3 px-5 py-3 text-[13px] font-medium transition-all text-left relative"
             style={
               item.active
-                ? {
-                    background: "var(--sidebar-accent)",
-                    color: "white",
-                    borderLeft: "3px solid var(--accent)",
-                  }
-                : {
-                    color: "oklch(0.65 0.02 230)",
-                    borderLeft: "3px solid transparent",
-                  }
+                ? { background: "var(--sidebar-accent)", color: "white", borderLeft: "3px solid var(--accent)" }
+                : { color: "oklch(0.65 0.02 230)", borderLeft: "3px solid transparent" }
             }
             onMouseEnter={(e) => {
               if (!item.active) {
@@ -100,7 +102,7 @@ export default function AppSidebar({
       <div style={{ borderTop: "1px solid var(--sidebar-border)" }}>
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-5 py-3 text-[13px] font-medium transition-all"
+          className="w-full flex items-center gap-3 px-5 py-4 text-[13px] font-medium transition-all"
           style={{ color: "oklch(0.55 0.02 230)", borderLeft: "3px solid transparent" }}
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.background = "oklch(0.55 0.22 27 / 0.12)"
@@ -116,5 +118,32 @@ export default function AppSidebar({
         </button>
       </div>
     </aside>
+  )
+}
+
+export default function AppSidebar(props: AppSidebarProps) {
+  const { mobileOpen, onMobileClose } = props
+
+  return (
+    <>
+      {/* Desktop: sidebar in flow */}
+      <div className="hidden md:flex h-full">
+        <SidebarContent {...props} />
+      </div>
+
+      {/* Mobile: overlay drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={onMobileClose}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-y-0 left-0 shadow-xl">
+            <SidebarContent {...props} showClose />
+          </div>
+        </div>
+      )}
+    </>
   )
 }
