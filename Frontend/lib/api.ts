@@ -1,4 +1,4 @@
-import type { ApiUser, ApiBoleta, ApiStats, ApiPaginated } from "./types"
+import type { ApiUser, ApiBoleta, ApiStats, ApiPaginated, NotificacionesConfig } from "./types"
 import type { Boleta } from "./mock-data"
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
@@ -145,6 +145,18 @@ export const usersApi = {
 
   delete: (id: string) =>
     req<{ mensaje: string }>(`/api/users/${id}`, { method: "DELETE" }),
+}
+
+// ─── Configuración ────────────────────────────────────────────────────────────
+
+export const configApi = {
+  getNotificaciones: () =>
+    req<NotificacionesConfig>("/api/config/notificaciones"),
+  updateNotificaciones: (data: NotificacionesConfig) =>
+    req<{ mensaje: string }>("/api/config/notificaciones", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 }
 
 // ─── Uploads ──────────────────────────────────────────────────────────────────

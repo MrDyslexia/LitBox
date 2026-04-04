@@ -28,6 +28,8 @@ export interface IBoleta extends Document {
     tipo: string               // MIME type
     tamano: number             // bytes
   }
+  conteoAvisosAtraso: number
+  ultimoAvisoAtraso?: Date
   fechaCreacion: Date
   fechaActualizacion: Date
 }
@@ -111,6 +113,13 @@ const boletaSchema = new Schema<IBoleta>(
       nombre: String,
       tipo: String,
       tamano: Number,
+    },
+    conteoAvisosAtraso: {
+      type: Number,
+      default: 0,
+    },
+    ultimoAvisoAtraso: {
+      type: Date,
     },
   },
   {

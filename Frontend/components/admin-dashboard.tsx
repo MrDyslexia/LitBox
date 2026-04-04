@@ -16,6 +16,8 @@ import {
   ChevronDown,
   DollarSign,
   Menu,
+  Settings,
+  Mail,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -25,12 +27,12 @@ import AppSidebar from "@/components/app-sidebar"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
 import StatusBadge from "@/components/status-badge"
 import { formatMonto, formatFecha, type Boleta, type BoletaStatus } from "@/lib/mock-data"
-import { boletasApi, usersApi, normalizeBoleta } from "@/lib/api"
-import type { ApiUser, ApiStats } from "@/lib/types"
+import { boletasApi, usersApi, configApi, normalizeBoleta } from "@/lib/api"
+import type { ApiUser, ApiStats, NotificacionesConfig } from "@/lib/types"
 import type { User } from "@/app/page"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
 
-type View = "dashboard" | "boletas" | "usuarios"
+type View = "dashboard" | "boletas" | "usuarios" | "configuracion"
 
 const roleColors: Record<ApiUser["rol"], string> = {
   empleado: "oklch(0.58 0.14 162)",
@@ -65,6 +67,33 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const [savingUser, setSavingUser] = useState(false)
   const [userError, setUserError] = useState("")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [notifConfig, setNotifConfig] = useState<NotificacionesConfig | null>(null)
+  const [savingNotif, setSavingNotif] = useState(false)
+  const [notifMsg, setNotifMsg] = useState("")
+
+  const loadNotifConfig = useCallback(async () => {
+    try {
+      const cfg = await configApi.getNotificaciones()
+      setNotifConfig(cfg)
+    } catch {
+      // silencioso — no rompe el dashboard
+    }
+  }, [])
+
+  const handleSaveNotif = async () => {
+    if (!notifConfig) return
+    setSavingNotif(true)
+    setNotifMsg("")
+    try {
+      await configApi.updateNotificaciones(notifConfig)
+      setNotifMsg("Configuración guardada correctamente.")
+    } catch {
+      setNotifMsg("Error al guardar. Inténtalo de nuevo.")
+    } finally {
+      setSavingNotif(false)
+      setTimeout(() => setNotifMsg(""), 3000)
+    }
+  }
 
   const loadData = useCallback(async () => {
     setLoadingData(true)
@@ -96,7 +125,8 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   useEffect(() => {
     loadData()
-  }, [loadData])
+    loadNotifConfig()
+  }, [loadData, loadNotifConfig])
 
   // Actualización en tiempo real: re-fetcha cuando el backend emite un evento
   useBoletasSync(loadData)
@@ -187,6 +217,12 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
       label: "Gestión de usuarios",
       active: view === "usuarios",
       onClick: () => setView("usuarios"),
+    },
+    {
+      icon: <Settings className="w-4 h-4" />,
+      label: "Configuración",
+      active: view === "configuracion",
+      onClick: () => setView("configuracion"),
     },
   ]
 
@@ -641,6 +677,90 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                   </tbody>
                 </table>
               </div>
+            </Card>
+          </div>
+        )}
+        {/* Configuración view */}
+        {view === "configuracion" && (
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-2xl">
+            <BreadcrumbNav
+              items={[
+                { label: "Resumen general", onClick: () => setView("dashboard") },
+                { label: "Configuración" },
+              ]}
+            />
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Configuración</h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                Controla qué notificaciones por correo recibes como administrador.
+              </p>
+            </div>
+
+            <Card className="border shadow-none">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  Notificaciones por email
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {notifConfig === null ? (
+                  <p className="text-sm text-muted-foreground">Cargando configuración...</p>
+                ) : (
+                  <>
+                    {(
+                      [
+                        { key: "creacion",   label: "Boleta creada",   desc: "Recibir aviso cuando un empleado crea una nueva boleta." },
+                        { key: "aprobacion", label: "Boleta aprobada", desc: "Recibir aviso cuando un auditor aprueba una boleta." },
+                        { key: "rechazo",    label: "Boleta rechazada", desc: "Recibir aviso cuando un auditor rechaza una boleta." },
+                        { key: "atraso",     label: "Atraso en revisión", desc: "Recibir recordatorios de boletas sin resolver (avisos 1 y 2). El tercer aviso siempre se envía." },
+                      ] as { key: keyof NotificacionesConfig; label: string; desc: string }[]
+                    ).map(({ key, label, desc }) => (
+                      <div key={key} className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">{label}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                        </div>
+                        <button
+                          role="switch"
+                          aria-checked={notifConfig[key]}
+                          onClick={() =>
+                            setNotifConfig((prev) => prev ? { ...prev, [key]: !prev[key] } : prev)
+                          }
+                          className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none"
+                          style={{
+                            background: notifConfig[key] ? "var(--primary)" : "oklch(0.82 0.01 240)",
+                          }}
+                        >
+                          <span
+                            className="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform"
+                            style={{ transform: notifConfig[key] ? "translateX(20px)" : "translateX(0px)" }}
+                          />
+                        </button>
+                      </div>
+                    ))}
+
+                    <div className="flex items-center gap-3 pt-2">
+                      <button
+                        onClick={handleSaveNotif}
+                        disabled={savingNotif}
+                        className="h-9 px-4 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+                        style={{ background: "var(--primary)" }}
+                      >
+                        {savingNotif ? "Guardando..." : "Guardar cambios"}
+                      </button>
+                      {notifMsg && (
+                        <span
+                          className="text-sm font-medium"
+                          style={{ color: notifMsg.startsWith("Error") ? "var(--destructive)" : "oklch(0.58 0.14 162)" }}
+                        >
+                          {notifMsg}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </CardContent>
             </Card>
           </div>
         )}

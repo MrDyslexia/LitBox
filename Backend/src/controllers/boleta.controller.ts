@@ -3,6 +3,11 @@ import { AuditLog } from "../models/AuditLog"
 import { Types } from "mongoose"
 import type { BoletaFiltros, AuthUser } from "../types"
 import { broadcast } from "../ws/broadcaster"
+import {
+  notificarBoletaCreada,
+  notificarBoletaAprobada,
+  notificarBoletaRechazada,
+} from "../services/notificaciones.service"
 
 // ─── Listar boletas (filtros + paginación) ────────────────────────────────────
 
@@ -97,8 +102,26 @@ export async function crearBoleta(
     estadoNuevo: "pendiente",
   })
 
-  const resultado = await Boleta.findById(boleta._id).lean()
+  const resultado = await Boleta.findById(boleta._id)
+    .populate("empleado", "nombre email")
+    .lean()
   broadcast({ type: "boleta:created", boletaId: boleta._id.toString() })
+
+  // Notificaciones async — no bloquean la respuesta
+  const empleadoPop = resultado?.empleado as { nombre: string; email: string } | undefined
+  if (resultado && empleadoPop) {
+    notificarBoletaCreada(
+      {
+        codigo: boleta.codigo,
+        tipo: boleta.tipo,
+        monto: boleta.monto,
+        fecha: boleta.fecha,
+        descripcion: boleta.descripcion,
+      },
+      { nombre: empleadoPop.nombre, email: empleadoPop.email }
+    ).catch((err) => console.error("[notif] crearBoleta:", err))
+  }
+
   return resultado
 }
 
@@ -173,6 +196,28 @@ export async function cambiarEstado(
     .populate("gestor", "nombre email avatar")
     .lean()
   broadcast({ type: "boleta:updated", boletaId: id })
+
+  // Notificaciones async
+  const empleadoPop = resultado?.empleado as { nombre: string; email: string } | undefined
+  if (resultado && empleadoPop) {
+    const boletaInfo = {
+      codigo: boleta.codigo,
+      tipo: boleta.tipo,
+      monto: boleta.monto,
+      fecha: boleta.fecha,
+      descripcion: boleta.descripcion ?? "",
+    }
+    const empleadoInfo = { nombre: empleadoPop.nombre, email: empleadoPop.email }
+
+    if (accion === "aprobar") {
+      notificarBoletaAprobada(boletaInfo, empleadoInfo, comentario)
+        .catch((err) => console.error("[notif] aprobar:", err))
+    } else if (accion === "rechazar") {
+      notificarBoletaRechazada(boletaInfo, empleadoInfo, comentario)
+        .catch((err) => console.error("[notif] rechazar:", err))
+    }
+  }
+
   return resultado
 }
 

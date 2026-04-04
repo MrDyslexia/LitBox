@@ -60,3 +60,10 @@ export interface ApiPaginated<T> {
   page: number
   totalPages: number
 }
+
+export interface NotificacionesConfig {
+  creacion: boolean
+  aprobacion: boolean
+  rechazo: boolean
+  atraso: boolean
+}

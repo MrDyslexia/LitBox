@@ -12,6 +12,7 @@ import {
 const rolEnum = t.Union([
   t.Literal("empleado"),
   t.Literal("auditor"),
+  t.Literal("gestor"),
   t.Literal("administrador"),
 ])
 

@@ -7,7 +7,9 @@ import { authRoutes } from "./routes/auth";
 import { boletaRoutes } from "./routes/boletas";
 import { userRoutes } from "./routes/users";
 import { uploadRoutes } from "./routes/uploads";
+import { configRoutes } from "./routes/config";
 import { addClient, removeClient, clientCount } from "./ws/broadcaster";
+import { iniciarAtrasosJob } from "./jobs/atrasos.job";
 
 // ─── Conectar a MongoDB ───────────────────────────────────────────────────────
 await connectDB();
@@ -95,7 +97,7 @@ const app = new Elysia()
   }))
   // ── Rutas de la API ───────────────────────────────────────────────────────
   .group("/api", (app) =>
-    app.use(authRoutes).use(boletaRoutes).use(userRoutes).use(uploadRoutes),
+    app.use(authRoutes).use(boletaRoutes).use(userRoutes).use(uploadRoutes).use(configRoutes),
   )
 
   // ── WebSocket — notificaciones en tiempo real ─────────────────────────────
@@ -142,5 +144,7 @@ const app = new Elysia()
 
 console.log(`✓ LitBox Backend corriendo en http://localhost:${env.port}`);
 console.log(`✓ Documentación API en http://localhost:${env.port}/docs`);
+
+iniciarAtrasosJob();
 
 export type App = typeof app;

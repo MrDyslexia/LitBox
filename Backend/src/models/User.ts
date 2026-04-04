@@ -13,6 +13,12 @@ export interface IUser extends Document {
   avatar: string               // iniciales generadas automáticamente
   fechaCreacion: Date
   ultimoAcceso?: Date
+  notificaciones?: {           // solo relevante para rol "administrador"
+    creacion: boolean
+    aprobacion: boolean
+    rechazo: boolean
+    atraso: boolean
+  }
 
   // Métodos de instancia
   verificarPassword(password: string): Promise<boolean>
@@ -59,6 +65,12 @@ const userSchema = new Schema<IUser>(
     },
     ultimoAcceso: {
       type: Date,
+    },
+    notificaciones: {
+      creacion:   { type: Boolean, default: true },
+      aprobacion: { type: Boolean, default: true },
+      rechazo:    { type: Boolean, default: true },
+      atraso:     { type: Boolean, default: true },
     },
   },
   {

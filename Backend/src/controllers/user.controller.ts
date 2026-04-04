@@ -1,6 +1,7 @@
 import { User } from "../models/User"
 import { Boleta } from "../models/Boleta"
 import type { UsuarioFiltros, UserRole } from "../types"
+import { notificarBienvenida } from "../services/notificaciones.service"
 
 // ─── Listar usuarios ──────────────────────────────────────────────────────────
 
@@ -68,6 +69,15 @@ export async function crearUsuario(data: {
   }
 
   const user = await User.create(data)
+
+  // Email de bienvenida con credenciales (async, no bloquea)
+  notificarBienvenida({
+    nombre: data.nombre,
+    email: data.email,
+    password: data.password,
+    rol: data.rol,
+  }).catch((err) => console.error("[notif] bienvenida:", err))
+
   return user.toPublic()
 }
 
