@@ -32,6 +32,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const demoAccounts = [
     { label: "Empleado", email: "empleado@empresa.com" },
     { label: "Auditor", email: "auditor@empresa.com" },
+    { label: "Gestor", email: "gestor@empresa.com" },
     { label: "Administrador", email: "admin@empresa.com" },
   ]
 

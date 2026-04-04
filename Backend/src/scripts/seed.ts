@@ -25,12 +25,14 @@ const IMAGEN_EJEMPLO = {
 }
 
 // ─── Crear usuarios ───────────────────────────────────────────────────────────
-const [admin, auditor1, auditor2, ...empleados] = await User.create([
+const [admin, auditor1, auditor2, gestor, ...empleados] = await User.create([
   // Administradores
   { nombre: "Ana Martínez",     email: "admin@empresa.com",            password: "demo1234", rol: "administrador" },
   // Auditores
   { nombre: "Carlos Ramírez",   email: "auditor@empresa.com",          password: "demo1234", rol: "auditor" },
   { nombre: "Sofía Herrera",    email: "sofia.herrera@empresa.com",    password: "demo1234", rol: "auditor" },
+  // Gestores
+  { nombre: "Roberto Fuentes",  email: "gestor@empresa.com",           password: "demo1234", rol: "gestor" },
   // Empleados
   { nombre: "María González",   email: "empleado@empresa.com",         password: "demo1234", rol: "empleado" },
   { nombre: "Juan Pérez",       email: "juan.perez@empresa.com",       password: "demo1234", rol: "empleado" },
@@ -43,7 +45,7 @@ const [admin, auditor1, auditor2, ...empleados] = await User.create([
   { nombre: "Felipe Naranjo",   email: "felipe.naranjo@empresa.com",   password: "demo1234", rol: "empleado" },
 ])
 
-console.log(`  ✓ ${2 + 2 + empleados.length} usuarios creados`)
+console.log(`  ✓ ${1 + 2 + 1 + empleados.length} usuarios creados`)
 
 const auditores = [auditor1, auditor2]
 const allEmpleados = empleados
@@ -182,17 +184,19 @@ function randFecha(diasAtras: number): Date {
 
 /**
  * Distribución de estados:
- *   pendiente   ~35%
+ *   pendiente   ~25%
  *   en_revision ~20%
- *   aprobada    ~35%
+ *   aprobada    ~25%
  *   rechazada   ~10%
+ *   pagada      ~20%
  */
 function randEstado(): BoletaEstado {
   const r = Math.random()
-  if (r < 0.35) return "pendiente"
-  if (r < 0.55) return "en_revision"
-  if (r < 0.90) return "aprobada"
-  return "rechazada"
+  if (r < 0.25) return "pendiente"
+  if (r < 0.45) return "en_revision"
+  if (r < 0.70) return "aprobada"
+  if (r < 0.80) return "rechazada"
+  return "pagada"
 }
 
 const COMENTARIOS_APROBACION = [
@@ -242,17 +246,28 @@ for (let i = 0; i < 150; i++) {
     imagen: IMAGEN_EJEMPLO,
   }
 
-  if (estado === "en_revision" || estado === "aprobada" || estado === "rechazada") {
+  if (estado === "en_revision" || estado === "aprobada" || estado === "rechazada" || estado === "pagada") {
     boletaData.auditor = auditor._id
     boletaData.fechaRevision = new Date(fecha.getTime() + randInt(1, 5) * 86_400_000)
   }
 
-  if (estado === "aprobada") {
+  if (estado === "aprobada" || estado === "pagada") {
     boletaData.comentarioAuditor = rand(COMENTARIOS_APROBACION)
   }
 
   if (estado === "rechazada") {
     boletaData.comentarioAuditor = rand(COMENTARIOS_RECHAZO)
+  }
+
+  if (estado === "pagada") {
+    boletaData.gestor = gestor._id
+    boletaData.fechaPago = new Date((boletaData.fechaRevision as Date).getTime() + randInt(1, 7) * 86_400_000)
+    boletaData.comprobante = {
+      url: "/api/uploads/foto_example.png",
+      nombre: "comprobante_transferencia.png",
+      tipo: "image/png",
+      tamano: 1_384_745,
+    }
   }
 
   const boleta = await Boleta.create(boletaData)
@@ -306,11 +321,19 @@ for (const boleta of boletasCreadas) {
         { boleta: (boleta as any)._id, usuario: boleta.auditor, accion: "rechazar", estadoAnterior: "en_revision", estadoNuevo: "rechazada", comentario: boleta.comentarioAuditor, fecha: boleta.fechaRevision }
       )
     }
+
+    if (boleta.estado === "pagada") {
+      auditEntries.push(
+        { boleta: (boleta as any)._id, usuario: boleta.auditor, accion: "revisar", estadoAnterior: "pendiente", estadoNuevo: "en_revision", fecha: boleta.fechaRevision },
+        { boleta: (boleta as any)._id, usuario: boleta.auditor, accion: "aprobar", estadoAnterior: "en_revision", estadoNuevo: "aprobada", comentario: boleta.comentarioAuditor, fecha: boleta.fechaRevision },
+        { boleta: (boleta as any)._id, usuario: boleta.gestor, accion: "pagar", estadoAnterior: "aprobada", estadoNuevo: "pagada", fecha: boleta.fechaPago }
+      )
+    }
   }
 }
 
 // Logs de login de usuarios demo
-for (const u of [admin, auditor1, auditor2, ...allEmpleados]) {
+for (const u of [admin, auditor1, auditor2, gestor, ...allEmpleados]) {
   auditEntries.push({ usuario: u._id, accion: "login", fecha: new Date() })
 }
 
@@ -339,6 +362,7 @@ console.log("\n👥 Cuentas de acceso (contraseña: demo1234):")
 console.log("   admin@empresa.com                → Administrador (Ana Martínez)")
 console.log("   auditor@empresa.com              → Auditor (Carlos Ramírez)")
 console.log("   sofia.herrera@empresa.com        → Auditor (Sofía Herrera)")
+console.log("   gestor@empresa.com               → Gestor (Roberto Fuentes)")
 console.log("   empleado@empresa.com             → Empleado (María González)")
 console.log("   juan.perez@empresa.com           → Empleado (Juan Pérez)")
 console.log("   + 6 empleados adicionales")
