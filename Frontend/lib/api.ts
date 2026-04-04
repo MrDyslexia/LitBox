@@ -42,14 +42,17 @@ export function normalizeBoleta(b: ApiBoleta): Boleta & { _id: string } {
     id: b.codigo,
     tipo: b.tipo as Boleta["tipo"],
     monto: b.monto,
-    fecha: b.fecha.split("T")[0],
+    fecha: b.fecha?.split("T")[0] ?? "",
     descripcion: b.descripcion,
     estado: b.estado,
-    empleadoNombre: b.empleado.nombre,
-    empleadoEmail: b.empleado.email,
+    empleadoNombre: b.empleado?.nombre ?? "",
+    empleadoEmail: b.empleado?.email ?? "",
     imageUrl: b.imagen?.url ?? "",
     comentarioAuditor: b.comentarioAuditor,
     fechaRevision: b.fechaRevision ? b.fechaRevision.split("T")[0] : undefined,
+    gestorNombre: b.gestor?.nombre,
+    fechaPago: b.fechaPago ? b.fechaPago.split("T")[0] : undefined,
+    comprobanteUrl: b.comprobante?.url,
   }
 }
 
@@ -92,6 +95,12 @@ export const boletasApi = {
       body: JSON.stringify(data),
     }),
 
+  revisar: (id: string) =>
+    req<ApiBoleta>(`/api/boletas/${id}/revisar`, {
+      method: "PATCH",
+      body: JSON.stringify({}),
+    }),
+
   aprobar: (id: string, comentario?: string) =>
     req<ApiBoleta>(`/api/boletas/${id}/aprobar`, {
       method: "PATCH",
@@ -102,6 +111,12 @@ export const boletasApi = {
     req<ApiBoleta>(`/api/boletas/${id}/rechazar`, {
       method: "PATCH",
       body: JSON.stringify({ comentario }),
+    }),
+
+  pagar: (id: string, comprobante: { url: string; nombre: string; tipo: string; tamano: number }) =>
+    req<ApiBoleta>(`/api/boletas/${id}/pagar`, {
+      method: "PATCH",
+      body: JSON.stringify({ comprobante }),
     }),
 
   eliminar: (id: string) =>

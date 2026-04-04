@@ -9,7 +9,6 @@ import {
   Clock,
   FileText,
   Search,
-  X,
   CalendarDays,
   MessageSquare,
   Filter,
@@ -20,11 +19,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import AppSidebar from "@/components/app-sidebar"
+import BreadcrumbNav from "@/components/breadcrumb-nav"
 import StatusBadge from "@/components/status-badge"
 import { formatMonto, formatFecha, type Boleta, type BoletaStatus } from "@/lib/mock-data"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
 import type { User } from "@/app/page"
+import { useBoletasSync } from "@/hooks/useBoletasSync"
 
 type View = "dashboard" | "revision"
 
@@ -49,14 +50,20 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
   const loadData = useCallback(async () => {
     setLoadingData(true)
     try {
-      const [boletasRes, statsRes] = await Promise.all([
+      const [boletasResult, statsResult] = await Promise.allSettled([
         boletasApi.list({ limit: "100" }),
         boletasApi.stats(),
       ])
-      setBoletas(boletasRes.items.map(normalizeBoleta))
-      setStats(statsRes)
-    } catch {
-      // mantener estado vacío
+      if (boletasResult.status === "fulfilled") {
+        setBoletas(boletasResult.value.items.map(normalizeBoleta))
+      } else {
+        console.error("Error cargando boletas:", boletasResult.reason)
+      }
+      if (statsResult.status === "fulfilled") {
+        setStats(statsResult.value)
+      } else {
+        console.error("Error cargando stats:", statsResult.reason)
+      }
     } finally {
       setLoadingData(false)
     }
@@ -65,6 +72,9 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // Actualización en tiempo real: re-fetcha cuando el backend emite un evento
+  useBoletasSync(loadData)
 
   const pendientes = boletas.filter((b) => b.estado === "pendiente" || b.estado === "en_revision")
 
@@ -137,7 +147,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
           <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}>
             <FileText className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-[13px] font-bold text-white tracking-tight">GastosApp</span>
+          <span className="text-[13px] font-bold text-white tracking-tight">LitBox</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(true)}
@@ -162,6 +172,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
         {/* Dashboard */}
         {view === "dashboard" && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl">
+            <BreadcrumbNav items={[{ label: "Resumen" }]} />
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Panel de auditoría</h1>
               <p className="text-muted-foreground text-sm mt-1">
@@ -244,6 +255,12 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
         {/* Revisión view */}
         {view === "revision" && !selected && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-5xl">
+            <BreadcrumbNav
+              items={[
+                { label: "Resumen", onClick: () => setView("dashboard") },
+                { label: "Revisar boletas" },
+              ]}
+            />
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Revisar boletas</h1>
               <p className="text-muted-foreground text-sm mt-1">
@@ -330,12 +347,13 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
         {/* Detalle para revisar */}
         {view === "revision" && selected && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-2xl">
-            <button
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => { setSelected(null); setComentario(""); setResolveError("") }}
-            >
-              <X className="w-4 h-4" /> Volver a la lista
-            </button>
+            <BreadcrumbNav
+              items={[
+                { label: "Resumen", onClick: () => { setView("dashboard"); setSelected(null) } },
+                { label: "Revisar boletas", onClick: () => { setSelected(null); setComentario(""); setResolveError("") } },
+                { label: selected.id },
+              ]}
+            />
 
             <div>
               <div className="flex items-center gap-3 flex-wrap">
@@ -391,8 +409,48 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
               </CardContent>
             </Card>
 
-            {/* Acción del auditor */}
-            {(selected.estado === "pendiente" || selected.estado === "en_revision") && (
+            {/* Acción del auditor: tomar boleta (pendiente → en_revision) */}
+            {selected.estado === "pendiente" && (
+              <Card className="border shadow-none">
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                    <h3 className="text-sm font-semibold text-foreground">Tomar para revisión</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Al tomar esta boleta iniciarás formalmente su revisión. Luego podrás aprobarla o rechazarla.
+                  </p>
+                  {resolveError && (
+                    <p className="text-sm text-destructive">{resolveError}</p>
+                  )}
+                  <Button
+                    className="w-full h-11 font-semibold text-white"
+                    style={{ background: "oklch(0.62 0.14 72)" }}
+                    onClick={async () => {
+                      if (!selected._id) return
+                      setResolving(true)
+                      setResolveError("")
+                      try {
+                        await boletasApi.revisar(selected._id)
+                        await loadData()
+                        setSelected(null)
+                      } catch (err) {
+                        setResolveError(err instanceof Error ? err.message : "Error al tomar la boleta")
+                      } finally {
+                        setResolving(false)
+                      }
+                    }}
+                    disabled={resolving}
+                  >
+                    <ClipboardList className="w-4 h-4 mr-2" />
+                    {resolving ? "Procesando..." : "Tomar boleta"}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Acción del auditor: aprobar/rechazar (en_revision) */}
+            {selected.estado === "en_revision" && (
               <Card className="border shadow-none">
                 <CardContent className="p-4 sm:p-5 space-y-4">
                   <div className="flex items-center gap-2">

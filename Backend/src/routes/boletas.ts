@@ -143,6 +143,34 @@ export const boletaRoutes = new Elysia({ prefix: "/boletas" })
       )
   )
 
+  // ── Solo gestores y administradores pueden PAGAR ──────────────────────────
+
+  .guard({}, (app) =>
+    app
+      .onBeforeHandle(({ authUser, set }) => {
+        if (!["gestor", "administrador"].includes(authUser.rol)) {
+          set.status = 403
+          throw new Error("Acceso denegado: se requiere rol gestor o administrador")
+        }
+      })
+      .patch(
+        "/:id/pagar",
+        ({ params, body, authUser }) =>
+          cambiarEstado(params.id, "pagar", undefined, authUser, body.comprobante),
+        {
+          body: t.Object({
+            comprobante: t.Object({
+              url: t.String(),
+              nombre: t.String(),
+              tipo: t.String(),
+              tamano: t.Number(),
+            }),
+          }),
+          detail: { summary: "Marcar boleta como pagada", tags: ["Boletas"] },
+        }
+      )
+  )
+
   // ── Solo administradores pueden ELIMINAR ──────────────────────────────────
 
   .guard({}, (app) =>

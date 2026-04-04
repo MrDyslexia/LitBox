@@ -1,10 +1,10 @@
 // ─── Roles ────────────────────────────────────────────────────────────────────
 
-export type UserRole = "empleado" | "auditor" | "administrador"
+export type UserRole = "empleado" | "auditor" | "gestor" | "administrador"
 
 // ─── Estados de boleta ────────────────────────────────────────────────────────
 
-export type BoletaEstado = "pendiente" | "en_revision" | "aprobada" | "rechazada"
+export type BoletaEstado = "pendiente" | "en_revision" | "aprobada" | "rechazada" | "pagada"
 
 // ─── Tipos de boleta (categorías de gasto) ───────────────────────────────────
 
@@ -25,6 +25,7 @@ export type AuditAccion =
   | "revisar"
   | "aprobar"
   | "rechazar"
+  | "pagar"
   | "eliminar"
   | "actualizar"
   | "login"

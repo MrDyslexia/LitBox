@@ -7,6 +7,7 @@ import { authRoutes } from "./routes/auth";
 import { boletaRoutes } from "./routes/boletas";
 import { userRoutes } from "./routes/users";
 import { uploadRoutes } from "./routes/uploads";
+import { addClient, removeClient, clientCount } from "./ws/broadcaster";
 
 // ─── Conectar a MongoDB ───────────────────────────────────────────────────────
 await connectDB();
@@ -96,6 +97,21 @@ const app = new Elysia()
   .group("/api", (app) =>
     app.use(authRoutes).use(boletaRoutes).use(userRoutes).use(uploadRoutes),
   )
+
+  // ── WebSocket — notificaciones en tiempo real ─────────────────────────────
+  .ws("/ws", {
+    open(ws) {
+      addClient(ws)
+      console.log(`WS: cliente conectado (total: ${clientCount()})`)
+    },
+    close(ws) {
+      removeClient(ws)
+      console.log(`WS: cliente desconectado (total: ${clientCount()})`)
+    },
+    message() {
+      // Los clientes no envían mensajes; solo reciben eventos
+    },
+  })
 
   // ── Manejo de errores global ──────────────────────────────────────────────
   .onError(({ error, set, code }) => {

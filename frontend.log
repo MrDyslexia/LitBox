@@ -3,10 +3,12 @@ $ next dev --turbopack
 - Local:         http://localhost:3000
 - Network:       http://192.168.1.158:3000
 - Environments: .env.local
-✓ Ready in 385ms
+✓ Ready in 389ms
 
 API URL: https://provider.blocktype.cl
- GET / 200 in 2.1s (next.js: 1882ms, application-code: 192ms)
+ GET / 200 in 349ms (next.js: 139ms, application-code: 210ms)
+API URL: https://provider.blocktype.cl
+ GET / 200 in 44ms (next.js: 3ms, application-code: 40ms)
 [browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
 
 - A server/client branch `if (typeof window !== 'undefined')`.
@@ -44,7 +46,7 @@ https://react.dev/link/hydration-mismatch
                   ...
  
 API URL: https://provider.blocktype.cl
- GET / 200 in 48ms (next.js: 5ms, application-code: 44ms)
+ GET / 200 in 33ms (next.js: 3ms, application-code: 31ms)
 [browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
 
 - A server/client branch `if (typeof window !== 'undefined')`.
@@ -82,9 +84,7 @@ https://react.dev/link/hydration-mismatch
                   ...
  
 API URL: https://provider.blocktype.cl
- GET / 200 in 43ms (next.js: 3ms, application-code: 39ms)
-API URL: https://provider.blocktype.cl
- GET / 200 in 40ms (next.js: 3ms, application-code: 37ms)
+ GET / 200 in 41ms (next.js: 3ms, application-code: 38ms)
 [browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
 
 - A server/client branch `if (typeof window !== 'undefined')`.
@@ -123,21 +123,16 @@ https://react.dev/link/hydration-mismatch
  
     at console.overrideMethod [as error] (chrome-extension://fmkadmapgofadopljbjfkapdkoienihi/build/installHook.js:1:174822) (chrome-extension://fmkadmapgofadopljbjfkapdkoienihi/build/installHook.js:1:174822)
 API URL: https://provider.blocktype.cl
- GET / 200 in 42ms (next.js: 4ms, application-code: 38ms)
-API URL: https://provider.blocktype.cl
- GET / 200 in 40ms (next.js: 4ms, application-code: 36ms)
+ GET / 200 in 31ms (next.js: 3ms, application-code: 28ms)
 API URL: https://provider.blocktype.cl
  GET / 200 in 39ms (next.js: 4ms, application-code: 35ms)
 API URL: https://provider.blocktype.cl
- GET / 200 in 38ms (next.js: 4ms, application-code: 34ms)
-✓ Compiled in 174ms
-✓ Compiled in 140ms
- GET / 200 in 74ms (next.js: 17ms, application-code: 57ms)
- GET / 200 in 64ms (next.js: 3ms, application-code: 61ms)
-✓ Compiled in 117ms
-✓ Compiled in 93ms
+ GET / 200 in 37ms (next.js: 3ms, application-code: 34ms)
 API URL: https://provider.blocktype.cl
- GET / 200 in 84ms (next.js: 6ms, application-code: 78ms)
+ GET / 200 in 30ms (next.js: 2ms, application-code: 27ms)
+✓ Compiled in 489ms
+API URL: https://provider.blocktype.cl
+ GET / 200 in 46ms (next.js: 7ms, application-code: 39ms)
 [browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
 
 - A server/client branch `if (typeof window !== 'undefined')`.
@@ -175,9 +170,230 @@ https://react.dev/link/hydration-mismatch
                   ...
  
 API URL: https://provider.blocktype.cl
- GET / 200 in 41ms (next.js: 4ms, application-code: 37ms)
+ GET / 200 in 55ms (next.js: 4ms, application-code: 51ms)
 API URL: https://provider.blocktype.cl
- GET / 200 in 43ms (next.js: 3ms, application-code: 39ms)
+ GET / 200 in 37ms (next.js: 3ms, application-code: 33ms)
+✓ Compiled in 152ms
+✓ Compiled in 41ms
+✓ Compiled in 164ms
+ GET / 200 in 110ms (next.js: 39ms, application-code: 71ms)
+ GET / 200 in 119ms (next.js: 3ms, application-code: 116ms)
+ GET / 200 in 171ms (next.js: 14ms, application-code: 157ms)
+ GET / 200 in 157ms (next.js: 2ms, application-code: 155ms)
+ GET / 200 in 212ms (next.js: 13ms, application-code: 199ms)
+ GET / 200 in 182ms (next.js: 3ms, application-code: 179ms)
+✓ Compiled in 36ms
+✓ Compiled in 68ms
+ GET / 200 in 115ms (next.js: 42ms, application-code: 73ms)
+ GET / 200 in 90ms (next.js: 2ms, application-code: 88ms)
+ GET / 200 in 145ms (next.js: 15ms, application-code: 130ms)
+ GET / 200 in 140ms (next.js: 1952µs, application-code: 138ms)
+✓ Compiled in 43ms
+✓ Compiled in 32ms
+✓ Compiled in 38ms
+✓ Compiled in 44ms
+✓ Compiled in 39ms
+ GET /admin/config.php 404 in 61ms (next.js: 17ms, application-code: 44ms)
+✓ Compiled in 42ms
+✓ Compiled in 32ms
+✓ Compiled in 37ms
+✓ Compiled in 69ms
+✓ Compiled in 71ms
+✓ Compiled in 36ms
 API URL: https://provider.blocktype.cl
- GET / 200 in 38ms (next.js: 3ms, application-code: 35ms)
- GET /sitemap_index.xml 404 in 371ms (next.js: 346ms, application-code: 25ms)
+ GET / 200 in 96ms (next.js: 8ms, application-code: 87ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="es">
+                          <body
+                            className="font-sans antialiased"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+API URL: https://provider.blocktype.cl
+ GET / 200 in 39ms (next.js: 4ms, application-code: 34ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="es">
+                          <body
+                            className="font-sans antialiased"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+API URL: https://provider.blocktype.cl
+ GET / 200 in 34ms (next.js: 3ms, application-code: 32ms)
+API URL: https://provider.blocktype.cl
+ GET / 200 in 36ms (next.js: 3ms, application-code: 33ms)
+API URL: https://provider.blocktype.cl
+ GET / 200 in 36ms (next.js: 3ms, application-code: 33ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="es">
+                          <body
+                            className="font-sans antialiased"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+API URL: https://provider.blocktype.cl
+ GET / 200 in 35ms (next.js: 3ms, application-code: 32ms)
+API URL: https://provider.blocktype.cl
+ GET / 200 in 36ms (next.js: 3ms, application-code: 33ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="es">
+                          <body
+                            className="font-sans antialiased"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+API URL: https://provider.blocktype.cl
+ GET / 200 in 29ms (next.js: 2ms, application-code: 27ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="es">
+                          <body
+                            className="font-sans antialiased"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+ GET /sitemap_index.xml 404 in 38ms (next.js: 4ms, application-code: 34ms)

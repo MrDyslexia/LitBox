@@ -6,3 +6,7 @@ ESTADO_SISTEMA.md
 ./Backend/node_modules/
 ./Frontend/cache/
 ./Frontend/~/
+.backend.log
+.frontend.log
+.backend.pid
+.frontend.pid

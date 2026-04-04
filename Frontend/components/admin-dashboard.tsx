@@ -22,23 +22,27 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import AppSidebar from "@/components/app-sidebar"
+import BreadcrumbNav from "@/components/breadcrumb-nav"
 import StatusBadge from "@/components/status-badge"
 import { formatMonto, formatFecha, type Boleta, type BoletaStatus } from "@/lib/mock-data"
 import { boletasApi, usersApi, normalizeBoleta } from "@/lib/api"
 import type { ApiUser, ApiStats } from "@/lib/types"
 import type { User } from "@/app/page"
+import { useBoletasSync } from "@/hooks/useBoletasSync"
 
 type View = "dashboard" | "boletas" | "usuarios"
 
 const roleColors: Record<ApiUser["rol"], string> = {
   empleado: "oklch(0.58 0.14 162)",
   auditor: "oklch(0.62 0.14 72)",
+  gestor: "oklch(0.52 0.18 290)",
   administrador: "oklch(0.28 0.1 243)",
 }
 
 const roleLabels: Record<ApiUser["rol"], string> = {
   empleado: "Empleado",
   auditor: "Auditor",
+  gestor: "Gestor",
   administrador: "Admin",
 }
 
@@ -65,16 +69,26 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const loadData = useCallback(async () => {
     setLoadingData(true)
     try {
-      const [boletasRes, usersRes, statsRes] = await Promise.all([
+      const [boletasResult, usersResult, statsResult] = await Promise.allSettled([
         boletasApi.list({ limit: "200" }),
         usersApi.list({ limit: "100" }),
         boletasApi.stats(),
       ])
-      setBoletas(boletasRes.items.map(normalizeBoleta))
-      setApiUsers(usersRes.items)
-      setStats(statsRes)
-    } catch {
-      // mantener estado vacío
+      if (boletasResult.status === "fulfilled") {
+        setBoletas(boletasResult.value.items.map(normalizeBoleta))
+      } else {
+        console.error("Error cargando boletas:", boletasResult.reason)
+      }
+      if (usersResult.status === "fulfilled") {
+        setApiUsers(usersResult.value.items)
+      } else {
+        console.error("Error cargando usuarios:", usersResult.reason)
+      }
+      if (statsResult.status === "fulfilled") {
+        setStats(statsResult.value)
+      } else {
+        console.error("Error cargando stats:", statsResult.reason)
+      }
     } finally {
       setLoadingData(false)
     }
@@ -83,6 +97,9 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // Actualización en tiempo real: re-fetcha cuando el backend emite un evento
+  useBoletasSync(loadData)
 
   const displayStats = {
     totalBoletas: stats?.total ?? boletas.length,
@@ -192,7 +209,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}>
             <FileText className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-[13px] font-bold text-white tracking-tight">GastosApp</span>
+          <span className="text-[13px] font-bold text-white tracking-tight">LitBox</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(true)}
@@ -217,6 +234,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         {/* Dashboard */}
         {view === "dashboard" && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-6xl">
+            <BreadcrumbNav items={[{ label: "Resumen general" }]} />
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Panel de administración</h1>
               <p className="text-muted-foreground text-sm mt-1">
@@ -326,6 +344,12 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         {/* Boletas view */}
         {view === "boletas" && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-6xl">
+            <BreadcrumbNav
+              items={[
+                { label: "Resumen general", onClick: () => setView("dashboard") },
+                { label: "Todas las boletas" },
+              ]}
+            />
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Todas las boletas</h1>
               <p className="text-muted-foreground text-sm mt-1">
@@ -416,6 +440,12 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         {/* Usuarios view */}
         {view === "usuarios" && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-4xl">
+            <BreadcrumbNav
+              items={[
+                { label: "Resumen general", onClick: () => setView("dashboard") },
+                { label: "Gestión de usuarios" },
+              ]}
+            />
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-foreground">Gestión de usuarios</h1>
@@ -486,6 +516,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                         >
                           <option value="empleado">Empleado</option>
                           <option value="auditor">Auditor</option>
+                          <option value="gestor">Gestor</option>
                           <option value="administrador">Administrador</option>
                         </select>
                       </div>

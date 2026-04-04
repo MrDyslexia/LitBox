@@ -4,10 +4,11 @@ import { useState, useEffect } from "react"
 import LoginPage from "@/components/login-page"
 import EmployeeDashboard from "@/components/employee-dashboard"
 import AuditorDashboard from "@/components/auditor-dashboard"
+import GestorDashboard from "@/components/gestor-dashboard"
 import AdminDashboard from "@/components/admin-dashboard"
 import { auth } from "@/lib/api"
 
-export type UserRole = "empleado" | "auditor" | "administrador"
+export type UserRole = "empleado" | "auditor" | "gestor" | "administrador"
 
 export interface User {
   _id: string
@@ -20,7 +21,6 @@ export interface User {
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
-  console.log("API URL:", process.env.NEXT_PUBLIC_API_URL)
   // Restaurar sesión al cargar la página (cookie httpOnly válida)
   useEffect(() => {
     auth
@@ -68,6 +68,10 @@ export default function App() {
 
   if (currentUser.role === "auditor") {
     return <AuditorDashboard user={currentUser} onLogout={handleLogout} />
+  }
+
+  if (currentUser.role === "gestor") {
+    return <GestorDashboard user={currentUser} onLogout={handleLogout} />
   }
 
   return <AdminDashboard user={currentUser} onLogout={handleLogout} />

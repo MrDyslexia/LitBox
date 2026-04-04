@@ -54,7 +54,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             <FileText className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="text-[14px] font-bold text-white tracking-tight leading-none">GastosApp</p>
+            <p className="text-[14px] font-bold text-white tracking-tight leading-none">LitBox</p>
             <p className="text-[9px] font-semibold tracking-widest uppercase mt-0.5" style={{ color: "var(--accent)" }}>
               Reembolsos
             </p>
@@ -101,7 +101,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </div>
 
           <p className="text-[11px]" style={{ color: "oklch(0.42 0.02 230)" }}>
-            © {new Date().getFullYear()} GastosApp. Todos los derechos reservados.
+            © {new Date().getFullYear()} LitBox. Todos los derechos reservados.
           </p>
         </div>
       </div>
@@ -119,7 +119,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           >
             <FileText className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-[13px] font-bold text-white tracking-tight">GastosApp</span>
+          <span className="text-[13px] font-bold text-white tracking-tight">LitBox</span>
         </div>
 
         <div className="flex-1 flex items-center justify-center p-6">

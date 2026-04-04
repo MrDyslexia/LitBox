@@ -6,8 +6,7 @@ BACKEND="$ROOT/Backend"
 FRONTEND="$ROOT/Frontend"
 BACKEND_PORT=3001
 FRONTEND_PORT=3000
-BACKEND_LOG="$ROOT/backend.log"
-FRONTEND_LOG="$ROOT/frontend.log"
+SESSION="LitBox"
 
 # ── Colores ──────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
@@ -16,25 +15,28 @@ info() { echo -e "${CYAN}[INFO]${NC} $*"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 fail() { echo -e "${RED}[FAIL]${NC} $*"; }
 
-# ── Limpieza de procesos anteriores ─────────────────────────────────────────
-info "Deteniendo procesos anteriores en puertos $BACKEND_PORT y $FRONTEND_PORT..."
+# ── Matar sesión tmux anterior si existe ─────────────────────────────────────
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+  info "Cerrando sesión tmux '$SESSION' anterior..."
+  tmux kill-session -t "$SESSION"
+fi
+
+# ── Liberar puertos ──────────────────────────────────────────────────────────
+info "Liberando puertos $BACKEND_PORT y $FRONTEND_PORT..."
 fuser -k ${BACKEND_PORT}/tcp 2>/dev/null && warn "Puerto $BACKEND_PORT liberado" || true
 fuser -k ${FRONTEND_PORT}/tcp 2>/dev/null && warn "Puerto $FRONTEND_PORT liberado" || true
 sleep 1
 
-# ── Iniciar Backend ──────────────────────────────────────────────────────────
-info "Iniciando Backend (puerto $BACKEND_PORT)..."
-cd "$BACKEND"
-bun dev > "$BACKEND_LOG" 2>&1 &
-BACKEND_PID=$!
-echo $BACKEND_PID > "$ROOT/.backend.pid"
+# ── Crear sesión tmux LitBox ─────────────────────────────────────────────────
+info "Creando sesión tmux '$SESSION'..."
 
-# ── Iniciar Frontend ─────────────────────────────────────────────────────────
-info "Iniciando Frontend (puerto $FRONTEND_PORT)..."
-cd "$FRONTEND"
-bun dev > "$FRONTEND_LOG" 2>&1 &
-FRONTEND_PID=$!
-echo $FRONTEND_PID > "$ROOT/.frontend.pid"
+# Ventana 0: Backend
+tmux new-session -d -s "$SESSION" -n "Backend" -x 220 -y 50
+tmux send-keys -t "$SESSION:Backend" "cd '$BACKEND' && bun dev" Enter
+
+# Ventana 1: Frontend
+tmux new-window -t "$SESSION" -n "Frontend"
+tmux send-keys -t "$SESSION:Frontend" "cd '$FRONTEND' && bun dev" Enter
 
 # ── Esperar que los servicios arranquen ──────────────────────────────────────
 echo ""
@@ -45,7 +47,7 @@ wait_for_port() {
   while ! curl -s "http://localhost:$port" > /dev/null 2>&1; do
     sleep 1; elapsed=$((elapsed + 1))
     if [ $elapsed -ge $timeout ]; then
-      fail "$label no respondió en ${timeout}s. Revisa el log."
+      fail "$label no respondió en ${timeout}s."
       return 1
     fi
   done
@@ -59,22 +61,16 @@ wait_for_port $FRONTEND_PORT "Frontend"
 echo ""
 info "Verificando CORS del backend desde origen https://blocktype.cl..."
 
-CORS_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+curl -s -o /dev/null \
   -X OPTIONS "http://localhost:$BACKEND_PORT/api/auth/me" \
   -H "Origin: https://blocktype.cl" \
   -H "Access-Control-Request-Method: GET" \
   -H "Access-Control-Request-Headers: Content-Type" \
-  -D /tmp/cors_headers.txt)
+  -D /tmp/cors_headers.txt
 
-echo ""
-info "Headers de respuesta OPTIONS:"
-grep -i "access-control" /tmp/cors_headers.txt || warn "No se encontraron headers CORS"
-
-# Contar cuántas veces aparece Access-Control-Allow-Origin
 ORIGIN_COUNT=$(grep -ic "access-control-allow-origin" /tmp/cors_headers.txt 2>/dev/null || echo 0)
 ORIGIN_VALUE=$(grep -i "access-control-allow-origin" /tmp/cors_headers.txt | head -1 || echo "")
 
-echo ""
 if [ "$ORIGIN_COUNT" -gt 1 ]; then
   fail "CORS DUPLICADO: Access-Control-Allow-Origin aparece $ORIGIN_COUNT veces"
 elif [ "$ORIGIN_COUNT" -eq 1 ]; then
@@ -83,7 +79,7 @@ else
   fail "CORS AUSENTE: no hay Access-Control-Allow-Origin en la respuesta preflight"
 fi
 
-# ── Verificar que el frontend usa la URL correcta del backend ────────────────
+# ── Verificar NEXT_PUBLIC_API_URL ────────────────────────────────────────────
 echo ""
 info "Verificando NEXT_PUBLIC_API_URL en el frontend..."
 ENV_VALUE=$(grep "NEXT_PUBLIC_API_URL" "$FRONTEND/.env.local" 2>/dev/null || echo "NO ENCONTRADO")
@@ -98,10 +94,18 @@ fi
 # ── Resumen ──────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}══════════════════════════════════════════${NC}"
-echo -e "  Backend PID:  $BACKEND_PID  → logs: $BACKEND_LOG"
-echo -e "  Frontend PID: $FRONTEND_PID → logs: $FRONTEND_LOG"
+echo -e "  Sesión tmux:  $SESSION"
+echo -e "  Ventana 0:    Backend  (puerto $BACKEND_PORT)"
+echo -e "  Ventana 1:    Frontend (puerto $FRONTEND_PORT)"
 echo -e ""
-echo -e "  Para detener:  kill \$(cat $ROOT/.backend.pid) \$(cat $ROOT/.frontend.pid)"
-echo -e "  Backend logs:  tail -f $BACKEND_LOG"
-echo -e "  Frontend logs: tail -f $FRONTEND_LOG"
+echo -e "  Adjuntarse:   tmux attach -t $SESSION"
+echo -e "  Ventanas:     Ctrl+B → 0 (Backend) | 1 (Frontend)"
+echo -e "  Detener:      tmux kill-session -t $SESSION"
 echo -e "${CYAN}══════════════════════════════════════════${NC}"
+echo ""
+
+# ── Adjuntarse a la sesión si se está en un terminal interactivo ─────────────
+if [ -t 1 ]; then
+  info "Adjuntándose a la sesión tmux '$SESSION'..."
+  tmux attach -t "$SESSION"
+fi

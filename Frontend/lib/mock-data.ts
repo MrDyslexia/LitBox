@@ -1,4 +1,4 @@
-export type BoletaStatus = "pendiente" | "en_revision" | "aprobada" | "rechazada"
+export type BoletaStatus = "pendiente" | "en_revision" | "aprobada" | "rechazada" | "pagada"
 
 export type BoletaTipo =
   | "Traslado"
@@ -8,6 +8,7 @@ export type BoletaTipo =
   | "Hospedaje"
   | "Comunicaciones"
   | "Materiales de oficina"
+  | "Otro"
 
 export interface Boleta {
   _id?: string           // MongoDB ObjectId — requerido para llamadas a la API
@@ -22,6 +23,9 @@ export interface Boleta {
   imageUrl: string
   comentarioAuditor?: string
   fechaRevision?: string
+  gestorNombre?: string
+  fechaPago?: string
+  comprobanteUrl?: string
 }
 
 export const MOCK_BOLETAS: Boleta[] = [
@@ -149,6 +153,12 @@ export const STATUS_CONFIG: Record<
     bg: "oklch(0.97 0.02 27)",
     dot: "oklch(0.577 0.245 27.325)",
   },
+  pagada: {
+    label: "Pagada",
+    color: "oklch(0.35 0.1 195)",
+    bg: "oklch(0.93 0.04 195)",
+    dot: "oklch(0.52 0.14 195)",
+  },
 }
 
 export const TIPOS_BOLETA: BoletaTipo[] = [
@@ -159,6 +169,7 @@ export const TIPOS_BOLETA: BoletaTipo[] = [
   "Hospedaje",
   "Comunicaciones",
   "Materiales de oficina",
+  "Otro",
 ]
 
 export function formatMonto(monto: number): string {

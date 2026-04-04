@@ -31,7 +31,7 @@ const auditLogSchema = new Schema<IAuditLog>(
     accion: {
       type: String,
       required: true,
-      enum: ["crear", "revisar", "aprobar", "rechazar", "eliminar", "actualizar", "login", "logout"],
+      enum: ["crear", "revisar", "aprobar", "rechazar", "pagar", "eliminar", "actualizar", "login", "logout"],
     },
     estadoAnterior: String,
     estadoNuevo: String,

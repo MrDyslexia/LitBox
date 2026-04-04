@@ -12,9 +12,17 @@ export interface IBoleta extends Document {
   estado: BoletaEstado
   empleado: Types.ObjectId     // ref: User
   auditor?: Types.ObjectId     // ref: User — quien revisó
+  gestor?: Types.ObjectId      // ref: User — quien pagó
   comentarioAuditor?: string
   fechaRevision?: Date
+  fechaPago?: Date
   imagen?: {
+    url: string
+    nombre: string
+    tipo: string               // MIME type
+    tamano: number             // bytes
+  }
+  comprobante?: {
     url: string
     nombre: string
     tipo: string               // MIME type
@@ -65,7 +73,7 @@ const boletaSchema = new Schema<IBoleta>(
     },
     estado: {
       type: String,
-      enum: ["pendiente", "en_revision", "aprobada", "rechazada"],
+      enum: ["pendiente", "en_revision", "aprobada", "rechazada", "pagada"],
       default: "pendiente",
     },
     empleado: {
@@ -77,6 +85,10 @@ const boletaSchema = new Schema<IBoleta>(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    gestor: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
     comentarioAuditor: {
       type: String,
       trim: true,
@@ -85,7 +97,16 @@ const boletaSchema = new Schema<IBoleta>(
     fechaRevision: {
       type: Date,
     },
+    fechaPago: {
+      type: Date,
+    },
     imagen: {
+      url: String,
+      nombre: String,
+      tipo: String,
+      tamano: Number,
+    },
+    comprobante: {
       url: String,
       nombre: String,
       tipo: String,

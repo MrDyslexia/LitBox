@@ -46,7 +46,7 @@ const userSchema = new Schema<IUser>(
     },
     rol: {
       type: String,
-      enum: ["empleado", "auditor", "administrador"],
+      enum: ["empleado", "auditor", "gestor", "administrador"],
       default: "empleado",
     },
     activo: {

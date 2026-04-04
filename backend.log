@@ -2,3 +2,49 @@ $ bun --watch src/index.ts
 ✓ MongoDB conectado: localhost
 ✓ LitBox Backend corriendo en http://localhost:3001
 ✓ Documentación API en http://localhost:3001/docs
+WS: cliente conectado (total: 1)
+WS: cliente desconectado (total: 1)
+WS: cliente conectado (total: 2)
+WS: cliente desconectado (total: 2)
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+CORS bloqueado: chrome-extension://gobngblklhkgmjhbpbdlkglbhhlafjnh no está en la lista permitida
+WS: cliente conectado (total: 3)
+WS: cliente desconectado (total: 3)
+WS: cliente conectado (total: 4)
+WS: cliente conectado (total: 5)
+WS: cliente desconectado (total: 5)
+WS: cliente conectado (total: 6)
+WS: cliente desconectado (total: 6)
+WS: cliente conectado (total: 7)
+WS: cliente desconectado (total: 7)
+WS: cliente conectado (total: 8)
+WS: cliente desconectado (total: 2)
+WS: cliente conectado (total: 3)
+WS: cliente desconectado (total: 3)
+WS: cliente desconectado (total: 3)
+WS: cliente conectado (total: 4)
+WS: cliente desconectado (total: 4)
+WS: cliente conectado (total: 5)
+WS: cliente desconectado (total: 5)
+WS: cliente conectado (total: 6)
+WS: cliente desconectado (total: 6)
+WS: cliente conectado (total: 7)
+WS: cliente desconectado (total: 7)
+WS: cliente conectado (total: 8)
+WS: cliente desconectado (total: 8)
+WS: cliente conectado (total: 9)
+error: script "dev" was terminated by signal SIGKILL (Forced quit)

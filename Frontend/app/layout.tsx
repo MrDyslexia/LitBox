@@ -6,7 +6,7 @@ import './globals.css'
 const _inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'GastosApp — Gestión de Boletas',
+  title: 'LitBox — Gestión de Boletas',
   description: 'Plataforma de gestión de reembolsos de gastos para empleados, auditores y administradores.',
   generator: 'v0.app',
   icons: {

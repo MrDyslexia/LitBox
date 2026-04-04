@@ -10,7 +10,6 @@ import {
   XCircle,
   Search,
   Upload,
-  X,
   ChevronRight,
   CalendarDays,
   Menu,
@@ -20,11 +19,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import AppSidebar from "@/components/app-sidebar"
+import BreadcrumbNav from "@/components/breadcrumb-nav"
 import StatusBadge from "@/components/status-badge"
 import { TIPOS_BOLETA, formatMonto, formatFecha, type Boleta, type BoletaTipo } from "@/lib/mock-data"
 import { boletasApi, uploadsApi, normalizeBoleta } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
 import type { User } from "@/app/page"
+import { useBoletasSync } from "@/hooks/useBoletasSync"
 
 type View = "dashboard" | "historial" | "nueva"
 
@@ -55,14 +56,20 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
   const loadData = useCallback(async () => {
     setLoadingData(true)
     try {
-      const [boletasRes, statsRes] = await Promise.all([
+      const [boletasResult, statsResult] = await Promise.allSettled([
         boletasApi.list({ limit: "100" }),
         boletasApi.stats(),
       ])
-      setBoletas(boletasRes.items.map(normalizeBoleta))
-      setStats(statsRes)
-    } catch {
-      // mantener estado vacío si falla
+      if (boletasResult.status === "fulfilled") {
+        setBoletas(boletasResult.value.items.map(normalizeBoleta))
+      } else {
+        console.error("Error cargando boletas:", boletasResult.reason)
+      }
+      if (statsResult.status === "fulfilled") {
+        setStats(statsResult.value)
+      } else {
+        console.error("Error cargando stats:", statsResult.reason)
+      }
     } finally {
       setLoadingData(false)
     }
@@ -71,6 +78,9 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // Actualización en tiempo real: re-fetcha cuando el backend emite un evento
+  useBoletasSync(loadData)
 
   const filtered = boletas.filter(
     (b) =>
@@ -148,7 +158,7 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
           <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}>
             <FileText className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-[13px] font-bold text-white tracking-tight">GastosApp</span>
+          <span className="text-[13px] font-bold text-white tracking-tight">LitBox</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(true)}
@@ -173,13 +183,27 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
         {/* Dashboard view */}
         {view === "dashboard" && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-                Hola, {user.name.split(" ")[0]}
-              </h1>
-              <p className="text-muted-foreground text-sm mt-1">
-                Aquí tienes un resumen de tus boletas de gastos.
-              </p>
+            <BreadcrumbNav
+              items={[{ label: "Inicio" }]}
+            />
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+                  Hola, {user.name.split(" ")[0]}
+                </h1>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Aquí tienes un resumen de tus boletas de gastos.
+                </p>
+              </div>
+              <Button
+                className="shrink-0 h-9 font-semibold text-white text-sm"
+                style={{ background: "var(--primary)" }}
+                onClick={() => { setView("nueva"); setSelectedBoleta(null) }}
+              >
+                <PlusCircle className="w-4 h-4 mr-1.5" />
+                <span className="hidden sm:inline">Nueva boleta</span>
+                <span className="sm:hidden">Nueva</span>
+              </Button>
             </div>
 
             {/* Stats */}
@@ -273,6 +297,12 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
         {/* Historial view */}
         {view === "historial" && !selectedBoleta && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-5xl">
+            <BreadcrumbNav
+              items={[
+                { label: "Inicio", onClick: () => setView("dashboard") },
+                { label: "Mis boletas" },
+              ]}
+            />
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Mis boletas</h1>
               <p className="text-muted-foreground text-sm mt-1">
@@ -338,12 +368,13 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
         {/* Detalle boleta */}
         {view === "historial" && selectedBoleta && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-2xl">
-            <button
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setSelectedBoleta(null)}
-            >
-              <X className="w-4 h-4" /> Volver al historial
-            </button>
+            <BreadcrumbNav
+              items={[
+                { label: "Inicio", onClick: () => { setView("dashboard"); setSelectedBoleta(null) } },
+                { label: "Mis boletas", onClick: () => setSelectedBoleta(null) },
+                { label: selectedBoleta.id },
+              ]}
+            />
 
             <div>
               <div className="flex items-center gap-3 flex-wrap">
@@ -415,6 +446,12 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
         {/* Nueva boleta */}
         {view === "nueva" && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-2xl">
+            <BreadcrumbNav
+              items={[
+                { label: "Inicio", onClick: () => setView("dashboard") },
+                { label: "Nueva boleta" },
+              ]}
+            />
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Nueva boleta</h1>
               <p className="text-muted-foreground text-sm mt-1">

@@ -33,7 +33,7 @@ function SidebarContent({
           <Receipt className="w-4 h-4 text-white" />
         </div>
         <div className="leading-tight flex-1 min-w-0">
-          <span className="text-[13px] font-bold tracking-tight text-white">GastosApp</span>
+          <span className="text-[13px] font-bold tracking-tight text-white">LitBox</span>
           <p className="text-[9px] font-medium tracking-widest uppercase" style={{ color: "var(--accent)" }}>
             Reembolsos
           </p>

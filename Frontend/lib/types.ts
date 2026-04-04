@@ -1,7 +1,7 @@
 // Tipos que mapean exactamente las respuestas del Backend (MongoDB)
 
-export type UserRole = "empleado" | "auditor" | "administrador"
-export type BoletaEstado = "pendiente" | "en_revision" | "aprobada" | "rechazada"
+export type UserRole = "empleado" | "auditor" | "gestor" | "administrador"
+export type BoletaEstado = "pendiente" | "en_revision" | "aprobada" | "rechazada" | "pagada"
 export type BoletaTipoApi =
   | "Traslado"
   | "Reuniones comerciales"
@@ -34,9 +34,12 @@ export interface ApiBoleta {
   estado: BoletaEstado
   empleado: { _id: string; nombre: string; email: string; avatar: string }
   auditor?: { _id: string; nombre: string; email: string; avatar: string }
+  gestor?: { _id: string; nombre: string; email: string; avatar: string }
   comentarioAuditor?: string
   fechaRevision?: string
+  fechaPago?: string
   imagen?: { url: string; nombre: string; tipo: string; tamano: number }
+  comprobante?: { url: string; nombre: string; tipo: string; tamano: number }
   fechaCreacion: string
 }
 
@@ -45,8 +48,10 @@ export interface ApiStats {
   en_revision: number
   aprobada: number
   rechazada: number
+  pagada: number
   total: number
   montoAprobado: number
+  montoPagado: number
 }
 
 export interface ApiPaginated<T> {
