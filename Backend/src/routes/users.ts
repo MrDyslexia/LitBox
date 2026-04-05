@@ -16,10 +16,21 @@ const rolEnum = t.Union([
   t.Literal("administrador"),
 ])
 
+const tipoCuentaEnum = t.Union([
+  t.Literal("corriente"),
+  t.Literal("vista"),
+  t.Literal("ahorro"),
+])
+
+const infoBancariaSchema = t.Object({
+  banco:        t.String({ minLength: 1 }),
+  tipoCuenta:   tipoCuentaEnum,
+  numeroCuenta: t.String({ minLength: 1 }),
+})
+
 export const userRoutes = new Elysia({ prefix: "/users" })
   .use(authMiddleware)
 
-  // Todas las rutas de usuario requieren ser administrador (guard scoped)
   .guard({}, (app) =>
     app
       .onBeforeHandle(({ authUser, set }) => {
@@ -34,17 +45,17 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         "/",
         ({ query }) =>
           listarUsuarios({
-            page: query.page ? Number(query.page) : 1,
-            limit: query.limit ? Number(query.limit) : 20,
-            rol: query.rol as any,
+            page:   query.page   ? Number(query.page)  : 1,
+            limit:  query.limit  ? Number(query.limit) : 20,
+            rol:    query.rol    as any,
             activo: query.activo === undefined ? undefined : query.activo === "true",
             buscar: query.buscar,
           }),
         {
           query: t.Object({
-            page: t.Optional(t.String()),
-            limit: t.Optional(t.String()),
-            rol: t.Optional(t.String()),
+            page:   t.Optional(t.String()),
+            limit:  t.Optional(t.String()),
+            rol:    t.Optional(t.String()),
             activo: t.Optional(t.String()),
             buscar: t.Optional(t.String()),
           }),
@@ -62,13 +73,17 @@ export const userRoutes = new Elysia({ prefix: "/users" })
       // POST /api/users
       .post(
         "/",
-        ({ body }) => crearUsuario(body),
+        ({ body }) => crearUsuario(body as any),
         {
           body: t.Object({
-            nombre: t.String({ minLength: 2, maxLength: 100 }),
-            email: t.String({ format: "email" }),
-            password: t.String({ minLength: 6 }),
-            rol: rolEnum,
+            primerNombre:   t.String({ minLength: 1, maxLength: 50 }),
+            segundoNombre:  t.Optional(t.String({ maxLength: 50 })),
+            primerApellido: t.String({ minLength: 1, maxLength: 50 }),
+            segundoApellido: t.Optional(t.String({ maxLength: 50 })),
+            rut:    t.String({ minLength: 9 }),   // ej: 1.234.567-8
+            email:  t.String({ format: "email" }),
+            rol:    rolEnum,
+            infoBancaria: t.Optional(infoBancariaSchema),
           }),
           detail: { summary: "Crear usuario", tags: ["Usuarios"] },
         }
@@ -80,10 +95,14 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         ({ params, body }) => actualizarUsuario(params.id, body as any),
         {
           body: t.Object({
-            nombre: t.Optional(t.String({ minLength: 2 })),
-            rol: t.Optional(rolEnum),
-            activo: t.Optional(t.Boolean()),
-            password: t.Optional(t.String({ minLength: 6 })),
+            primerNombre:    t.Optional(t.String({ minLength: 1 })),
+            segundoNombre:   t.Optional(t.String()),
+            primerApellido:  t.Optional(t.String({ minLength: 1 })),
+            segundoApellido: t.Optional(t.String()),
+            rut:             t.Optional(t.String()),
+            rol:             t.Optional(rolEnum),
+            activo:          t.Optional(t.Boolean()),
+            infoBancaria:    t.Optional(infoBancariaSchema),
           }),
           detail: { summary: "Actualizar usuario", tags: ["Usuarios"] },
         }

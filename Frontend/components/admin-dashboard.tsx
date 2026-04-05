@@ -12,7 +12,6 @@ import {
   Search,
   Trash2,
   UserPlus,
-  Shield,
   ChevronDown,
   DollarSign,
   Menu,
@@ -28,8 +27,10 @@ import BreadcrumbNav from "@/components/breadcrumb-nav"
 import StatusBadge from "@/components/status-badge"
 import { formatMonto, formatFecha, type Boleta, type BoletaStatus } from "@/lib/mock-data"
 import { boletasApi, usersApi, configApi, normalizeBoleta } from "@/lib/api"
+import { formatRutInput, isValidRut } from "@/lib/rut"
 import type { ApiUser, ApiStats, NotificacionesConfig } from "@/lib/types"
 import type { User } from "@/app/page"
+import ConfiguracionPerfil from "@/components/configuracion-perfil"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
 
 type View = "dashboard" | "boletas" | "usuarios" | "configuracion"
@@ -51,9 +52,10 @@ const roleLabels: Record<ApiUser["rol"], string> = {
 interface AdminDashboardProps {
   user: User
   onLogout: () => void
+  onUpdate: (updates: { name: string; email: string; avatar: string }) => void
 }
 
-export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
+export default function AdminDashboard({ user, onLogout, onUpdate }: AdminDashboardProps) {
   const [view, setView] = useState<View>("dashboard")
   const [boletas, setBoletas] = useState<Boleta[]>([])
   const [apiUsers, setApiUsers] = useState<ApiUser[]>([])
@@ -63,7 +65,21 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const [searchUsers, setSearchUsers] = useState("")
   const [filterStatus, setFilterStatus] = useState<BoletaStatus | "todas">("todas")
   const [showNewUser, setShowNewUser] = useState(false)
-  const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "empleado" as ApiUser["rol"] })
+  const [newUser, setNewUser] = useState({
+    primerNombre: "",
+    segundoNombre: "",
+    primerApellido: "",
+    segundoApellido: "",
+    rut: "",
+    email: "",
+    rol: "empleado" as ApiUser["rol"],
+    showBancaria: false,
+    banco: "",
+    tipoCuenta: "corriente" as "corriente" | "vista" | "ahorro",
+    numeroCuenta: "",
+  })
+  const [emailError, setEmailError] = useState("")
+  const [rutError, setRutError] = useState("")
   const [savingUser, setSavingUser] = useState(false)
   const [userError, setUserError] = useState("")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -157,19 +173,56 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
       u.email.toLowerCase().includes(searchUsers.toLowerCase())
   )
 
+  const validarEmail = (email: string): boolean => {
+    const re = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
+    return re.test(email.trim())
+  }
+
+  const resetNewUser = () => {
+    setNewUser({
+      primerNombre: "", segundoNombre: "", primerApellido: "", segundoApellido: "",
+      rut: "", email: "", rol: "empleado", showBancaria: false,
+      banco: "", tipoCuenta: "corriente", numeroCuenta: "",
+    })
+    setEmailError("")
+    setRutError("")
+    setUserError("")
+  }
+
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSavingUser(true)
+    setEmailError("")
+    setRutError("")
     setUserError("")
+
+    if (!validarEmail(newUser.email)) {
+      setEmailError("Ingresa un correo electrónico válido.")
+      return
+    }
+    if (!isValidRut(newUser.rut)) {
+      setRutError("RUT inválido")
+      return
+    }
+
+    setSavingUser(true)
     try {
+      const infoBancaria =
+        newUser.showBancaria && newUser.banco && newUser.numeroCuenta
+          ? { banco: newUser.banco, tipoCuenta: newUser.tipoCuenta, numeroCuenta: newUser.numeroCuenta }
+          : undefined
+
       await usersApi.create({
-        nombre: newUser.name,
+        primerNombre:   newUser.primerNombre,
+        segundoNombre:  newUser.segundoNombre || undefined,
+        primerApellido: newUser.primerApellido,
+        segundoApellido: newUser.segundoApellido || undefined,
+        rut:   newUser.rut,
         email: newUser.email,
-        password: newUser.password,
-        rol: newUser.role,
+        rol:   newUser.rol,
+        infoBancaria,
       })
       await loadData()
-      setNewUser({ name: "", email: "", password: "", role: "empleado" })
+      resetNewUser()
       setShowNewUser(false)
     } catch (err) {
       setUserError(err instanceof Error ? err.message : "Error al crear usuario")
@@ -252,7 +305,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           className="text-white/80 hover:text-white transition-colors p-1"
           aria-label="Abrir menú"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-5 h-5" color="white"/>
         </button>
       </header>
 
@@ -505,50 +558,100 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                   <CardTitle className="text-base font-semibold">Crear nuevo usuario</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleAddUser} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Nombre completo</Label>
-                        <Input
-                          placeholder="Ej: Juan Pérez"
-                          value={newUser.name}
-                          onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                          required
-                          className="h-10"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Correo institucional</Label>
-                        <Input
-                          type="email"
-                          placeholder="usuario@empresa.com"
-                          value={newUser.email}
-                          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                          required
-                          className="h-10"
-                        />
+                  <form onSubmit={handleAddUser} className="space-y-5">
+
+                    {/* Nombres */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Datos personales</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">Primer nombre <span className="text-destructive">*</span></Label>
+                          <Input
+                            placeholder="Ej: Juan"
+                            value={newUser.primerNombre}
+                            onChange={(e) => setNewUser({ ...newUser, primerNombre: e.target.value })}
+                            required
+                            className="h-10"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">Segundo nombre <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                          <Input
+                            placeholder="Ej: Andrés"
+                            value={newUser.segundoNombre}
+                            onChange={(e) => setNewUser({ ...newUser, segundoNombre: e.target.value })}
+                            className="h-10"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">Primer apellido <span className="text-destructive">*</span></Label>
+                          <Input
+                            placeholder="Ej: Pérez"
+                            value={newUser.primerApellido}
+                            onChange={(e) => setNewUser({ ...newUser, primerApellido: e.target.value })}
+                            required
+                            className="h-10"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">Segundo apellido <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                          <Input
+                            placeholder="Ej: González"
+                            value={newUser.segundoApellido}
+                            onChange={(e) => setNewUser({ ...newUser, segundoApellido: e.target.value })}
+                            className="h-10"
+                          />
+                        </div>
                       </div>
                     </div>
+
+                    {/* RUT + Email + Rol */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Contraseña temporal</Label>
+                        <Label className="text-sm font-medium">RUT <span className="text-destructive">*</span></Label>
                         <Input
-                          type="password"
-                          placeholder="Mínimo 6 caracteres"
-                          value={newUser.password}
-                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                          placeholder="12.345.678-9"
+                          value={newUser.rut}
+                          onChange={(e) => {
+                            const formatted = formatRutInput(e.target.value)
+                            const valid = formatted ? isValidRut(formatted) : true
+                            setNewUser({ ...newUser, rut: formatted })
+                            setRutError(formatted && !valid ? "RUT inválido" : "")
+                          }}
                           required
-                          minLength={6}
-                          className="h-10"
+                          className={`h-10 ${rutError ? "border-destructive" : newUser.rut && isValidRut(newUser.rut) ? "border-green-500" : ""}`}
                         />
+                        {rutError
+                          ? <p className="text-xs text-destructive">{rutError}</p>
+                          : newUser.rut && isValidRut(newUser.rut) && (
+                            <p className="text-xs text-green-600">RUT válido</p>
+                          )
+                        }
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Rol</Label>
+                        <Label className="text-sm font-medium">Correo electrónico <span className="text-destructive">*</span></Label>
+                        <Input
+                          type="text"
+                          placeholder="usuario@empresa.com"
+                          value={newUser.email}
+                          onChange={(e) => { setNewUser({ ...newUser, email: e.target.value }); setEmailError("") }}
+                          onBlur={() => {
+                            if (newUser.email && !validarEmail(newUser.email)) {
+                              setEmailError("Ingresa un correo electrónico válido.")
+                            }
+                          }}
+                          required
+                          className={`h-10 ${emailError ? "border-destructive" : ""}`}
+                        />
+                        {emailError && <p className="text-xs text-destructive">{emailError}</p>}
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2 sm:max-w-[calc(50%-8px)]">
+                        <Label className="text-sm font-medium">Rol <span className="text-destructive">*</span></Label>
                         <select
                           className="w-full h-10 px-3 rounded-lg border text-sm bg-background text-foreground"
                           style={{ borderColor: "var(--border)" }}
-                          value={newUser.role}
-                          onChange={(e) => setNewUser({ ...newUser, role: e.target.value as ApiUser["rol"] })}
+                          value={newUser.rol}
+                          onChange={(e) => setNewUser({ ...newUser, rol: e.target.value as ApiUser["rol"] })}
                         >
                           <option value="empleado">Empleado</option>
                           <option value="auditor">Auditor</option>
@@ -557,6 +660,63 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                         </select>
                       </div>
                     </div>
+
+                    {/* Info bancaria (opcional) */}
+                    <div>
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 text-sm font-medium"
+                        style={{ color: "var(--accent)" }}
+                        onClick={() => setNewUser({ ...newUser, showBancaria: !newUser.showBancaria })}
+                      >
+                        <ChevronDown
+                          className="w-4 h-4 transition-transform"
+                          style={{ transform: newUser.showBancaria ? "rotate(180deg)" : "rotate(0deg)" }}
+                        />
+                        {newUser.showBancaria ? "Ocultar" : "Agregar"} información bancaria (opcional)
+                      </button>
+
+                      {newUser.showBancaria && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium">Banco</Label>
+                            <Input
+                              placeholder="Ej: Banco de Chile"
+                              value={newUser.banco}
+                              onChange={(e) => setNewUser({ ...newUser, banco: e.target.value })}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium">Tipo de cuenta</Label>
+                            <select
+                              className="w-full h-10 px-3 rounded-lg border text-sm bg-background text-foreground"
+                              style={{ borderColor: "var(--border)" }}
+                              value={newUser.tipoCuenta}
+                              onChange={(e) => setNewUser({ ...newUser, tipoCuenta: e.target.value as any })}
+                            >
+                              <option value="corriente">Cuenta Corriente</option>
+                              <option value="vista">Cuenta Vista</option>
+                              <option value="ahorro">Cuenta de Ahorro</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium">Número de cuenta</Label>
+                            <Input
+                              placeholder="Ej: 00123456789"
+                              value={newUser.numeroCuenta}
+                              onChange={(e) => setNewUser({ ...newUser, numeroCuenta: e.target.value })}
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      La contraseña se genera automáticamente y se envía al correo del usuario.
+                    </p>
+
                     {userError && <p className="text-sm text-destructive">{userError}</p>}
                     <div className="flex gap-3">
                       <Button
@@ -571,7 +731,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                         type="button"
                         variant="outline"
                         className="h-10"
-                        onClick={() => setShowNewUser(false)}
+                        onClick={() => { resetNewUser(); setShowNewUser(false) }}
                       >
                         Cancelar
                       </Button>
@@ -626,7 +786,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                               >
                                 {u.avatar}
                               </div>
-                              <span className="font-medium text-foreground truncate max-w-[100px] sm:max-w-none">{u.nombre}</span>
+                              <span className="font-medium text-foreground truncate max-w-[100px] sm:max-w-none">{u.primerNombre} {u.primerApellido}</span>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground text-xs hidden sm:table-cell">{u.email}</td>
@@ -662,13 +822,6 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
-                              <button
-                                className="p-1.5 rounded-md transition-colors text-muted-foreground"
-                                style={{ color: "var(--accent)" }}
-                                aria-label="Ver permisos"
-                              >
-                                <Shield className="w-4 h-4" />
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -692,9 +845,12 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Configuración</h1>
               <p className="text-muted-foreground text-sm mt-1">
-                Controla qué notificaciones por correo recibes como administrador.
+                Gestiona tu perfil y las preferencias de notificaciones.
               </p>
             </div>
+
+            {/* Datos de perfil */}
+            <ConfiguracionPerfil user={user} onBack={() => setView("dashboard")} onUpdate={onUpdate} embedded />
 
             <Card className="border shadow-none">
               <CardHeader className="pb-3">

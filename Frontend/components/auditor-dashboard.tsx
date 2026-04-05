@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Filter,
   Menu,
+  Settings,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -26,15 +27,17 @@ import { boletasApi, normalizeBoleta } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
 import type { User } from "@/app/page"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
+import ConfiguracionPerfil from "@/components/configuracion-perfil"
 
-type View = "dashboard" | "revision"
+type View = "dashboard" | "revision" | "configuracion"
 
 interface AuditorDashboardProps {
   user: User
   onLogout: () => void
+  onUpdate: (updates: { name: string; email: string; avatar: string }) => void
 }
 
-export default function AuditorDashboard({ user, onLogout }: AuditorDashboardProps) {
+export default function AuditorDashboard({ user, onLogout, onUpdate }: AuditorDashboardProps) {
   const [view, setView] = useState<View>("dashboard")
   const [boletas, setBoletas] = useState<Boleta[]>([])
   const [stats, setStats] = useState<ApiStats | null>(null)
@@ -126,6 +129,12 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
       active: view === "revision",
       onClick: () => { setView("revision"); setSelected(null) },
     },
+    {
+      icon: <Settings className="w-4 h-4" />,
+      label: "Mi perfil",
+      active: view === "configuracion",
+      onClick: () => { setView("configuracion"); setSelected(null) },
+    },
   ]
 
   const statusFilters: { value: BoletaStatus | "todas"; label: string }[] = [
@@ -154,7 +163,7 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
           className="text-white/80 hover:text-white transition-colors p-1"
           aria-label="Abrir menú"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-5 h-5" color="white"/>
         </button>
       </header>
 
@@ -509,6 +518,10 @@ export default function AuditorDashboard({ user, onLogout }: AuditorDashboardPro
               </Card>
             )}
           </div>
+        )}
+        {/* Perfil */}
+        {view === "configuracion" && (
+          <ConfiguracionPerfil user={user} onBack={() => setView("dashboard")} onUpdate={onUpdate} />
         )}
       </main>
     </div>

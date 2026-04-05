@@ -5,22 +5,34 @@ import type { UserRole } from "../types"
 // ─── Interfaz del documento ───────────────────────────────────────────────────
 
 export interface IUser extends Document {
-  nombre: string
+  primerNombre: string
+  segundoNombre?: string
+  primerApellido: string
+  segundoApellido?: string
+  nombre: string                // campo computado: se construye desde los anteriores
+  rut: string
   email: string
   password: string
   rol: UserRole
   activo: boolean
-  avatar: string               // iniciales generadas automáticamente
+  avatar: string
+  infoBancaria?: {
+    banco: string
+    tipoCuenta: "corriente" | "vista" | "ahorro"
+    numeroCuenta: string
+  }
+  esNuevo: boolean              // true = usuario recién creado con contraseña por defecto
+  codigoReset?: string          // código numérico de 6 dígitos (plain, caduca rápido)
+  codigoResetExpira?: Date
   fechaCreacion: Date
   ultimoAcceso?: Date
-  notificaciones?: {           // solo relevante para rol "administrador"
+  notificaciones?: {
     creacion: boolean
     aprobacion: boolean
     rechazo: boolean
     atraso: boolean
   }
 
-  // Métodos de instancia
   verificarPassword(password: string): Promise<boolean>
   toPublic(): Omit<IUser, "password">
 }
@@ -29,12 +41,38 @@ export interface IUser extends Document {
 
 const userSchema = new Schema<IUser>(
   {
+    primerNombre: {
+      type: String,
+      required: [true, "El primer nombre es requerido"],
+      trim: true,
+      maxlength: [50, "El primer nombre no puede superar 50 caracteres"],
+    },
+    segundoNombre: {
+      type: String,
+      trim: true,
+      maxlength: [50, "El segundo nombre no puede superar 50 caracteres"],
+    },
+    primerApellido: {
+      type: String,
+      required: [true, "El primer apellido es requerido"],
+      trim: true,
+      maxlength: [50, "El primer apellido no puede superar 50 caracteres"],
+    },
+    segundoApellido: {
+      type: String,
+      trim: true,
+      maxlength: [50, "El segundo apellido no puede superar 50 caracteres"],
+    },
     nombre: {
       type: String,
-      required: [true, "El nombre es requerido"],
       trim: true,
-      minlength: [2, "El nombre debe tener al menos 2 caracteres"],
-      maxlength: [100, "El nombre no puede superar 100 caracteres"],
+    },
+    rut: {
+      type: String,
+      required: [true, "El RUT es requerido"],
+      unique: true,
+      trim: true,
+      match: [/^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/, "Formato de RUT inválido (ej: 12.345.678-9)"],
     },
     email: {
       type: String,
@@ -42,13 +80,13 @@ const userSchema = new Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Email inválido"],
+      match: [/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/, "Email inválido"],
     },
     password: {
       type: String,
       required: [true, "La contraseña es requerida"],
       minlength: [6, "La contraseña debe tener al menos 6 caracteres"],
-      select: false, // nunca se devuelve en queries por defecto
+      select: false,
     },
     rol: {
       type: String,
@@ -63,6 +101,17 @@ const userSchema = new Schema<IUser>(
       type: String,
       default: "",
     },
+    infoBancaria: {
+      banco:        { type: String, trim: true },
+      tipoCuenta:   { type: String, enum: ["corriente", "vista", "ahorro"] },
+      numeroCuenta: { type: String, trim: true },
+    },
+    esNuevo: {
+      type: Boolean,
+      default: false,
+    },
+    codigoReset:       { type: String },
+    codigoResetExpira: { type: Date },
     ultimoAcceso: {
       type: Date,
     },
@@ -85,15 +134,27 @@ userSchema.index({ rol: 1, activo: 1 })
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
-// Generar avatar (iniciales) y hashear contraseña antes de guardar
 userSchema.pre("save", async function (next) {
-  // Generar iniciales si no existen o el nombre cambió
+  // Computar nombre completo desde partes
+  if (
+    this.isModified("primerNombre") ||
+    this.isModified("segundoNombre") ||
+    this.isModified("primerApellido") ||
+    this.isModified("segundoApellido") ||
+    !this.nombre
+  ) {
+    const partes = [
+      this.primerNombre,
+      this.segundoNombre,
+      this.primerApellido,
+      this.segundoApellido,
+    ].filter(Boolean)
+    this.nombre = partes.join(" ")
+  }
+
+  // Generar avatar (iniciales: primera letra del primer nombre + primera letra del primer apellido)
   if (this.isModified("nombre") || !this.avatar) {
-    const partes = this.nombre.trim().split(" ").filter(Boolean)
-    this.avatar =
-      partes.length >= 2
-        ? `${partes[0][0]}${partes[1][0]}`.toUpperCase()
-        : partes[0].substring(0, 2).toUpperCase()
+    this.avatar = `${this.primerNombre[0]}${this.primerApellido[0]}`.toUpperCase()
   }
 
   // Hashear contraseña solo si fue modificada

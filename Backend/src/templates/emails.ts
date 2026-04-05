@@ -160,6 +160,26 @@ export function tmplAtrasoAdmin(opts: {
   )
 }
 
+export function tmplCodigoVerificacion(opts: {
+  nombre: string
+  codigo: string
+  motivo: "cambio_password" | "recuperacion"
+}) {
+  const esCambio = opts.motivo === "cambio_password"
+  return layout(
+    esCambio ? "Código de verificación — cambio de contraseña" : "Código de recuperación de contraseña",
+    `<h2 style="color:#1e3a5f;font-size:18px;margin:0 0 16px;">${esCambio ? "Código para cambiar tu contraseña" : "Recuperación de contraseña"}</h2>
+     <p style="color:#475569;font-size:14px;margin:0 0 20px;">Hola <strong>${opts.nombre}</strong>, ${esCambio ? "solicitaste cambiar tu contraseña en LitBox." : "recibimos una solicitud para restablecer tu contraseña."} Usa el siguiente código de verificación:</p>
+     <div style="text-align:center;margin:24px 0;">
+       <div style="display:inline-block;background:#f0f4ff;border:2px dashed #93acd8;border-radius:10px;padding:16px 40px;">
+         <span style="font-size:36px;font-weight:700;letter-spacing:10px;color:#1e3a5f;font-family:monospace;">${opts.codigo}</span>
+       </div>
+     </div>
+     <p style="color:#64748b;font-size:13px;margin:0 0 8px;text-align:center;">Este código expira en <strong>15 minutos</strong>.</p>
+     <p style="color:#dc2626;font-size:12px;margin:0;text-align:center;">Si no solicitaste este cambio, ignora este correo y tu contraseña actual seguirá siendo válida.</p>`
+  )
+}
+
 export function tmplBienvenida(opts: {
   nombre: string
   email: string

@@ -70,6 +70,49 @@ export const auth = {
 
   me: () =>
     req<ApiUser>("/api/auth/me"),
+
+  actualizarPerfil: (data: {
+    primerNombre?: string
+    segundoNombre?: string
+    primerApellido?: string
+    segundoApellido?: string
+    email?: string
+    infoBancaria?: { banco: string; tipoCuenta: string; numeroCuenta: string }
+  }) =>
+    req<ApiUser>("/api/auth/perfil", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  solicitarCodigoCambio: () =>
+    req<{ mensaje: string }>("/api/auth/solicitar-cambio-password", { method: "POST" }),
+
+  confirmarCambioPassword: (codigo: string, passwordNueva: string) =>
+    req<{ mensaje: string }>("/api/auth/confirmar-cambio-password", {
+      method: "POST",
+      body: JSON.stringify({ codigo, passwordNueva }),
+    }),
+
+  solicitarRecuperacion: (email: string) =>
+    req<{ mensaje: string }>("/api/auth/solicitar-recuperacion", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  recuperarPassword: (email: string, codigo: string, passwordNueva: string) =>
+    req<{ mensaje: string }>("/api/auth/recuperar-password", {
+      method: "POST",
+      body: JSON.stringify({ email, codigo, passwordNueva }),
+    }),
+
+  completarPerfil: (data: {
+    password: string
+    infoBancaria?: { banco: string; tipoCuenta: string; numeroCuenta: string }
+  }) =>
+    req<ApiUser>("/api/auth/completar-perfil", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 }
 
 // ─── Boletas ──────────────────────────────────────────────────────────────────
@@ -131,7 +174,16 @@ export const usersApi = {
     return req<ApiPaginated<ApiUser>>(`/api/users${qs}`)
   },
 
-  create: (data: { nombre: string; email: string; password: string; rol: string }) =>
+  create: (data: {
+    primerNombre: string
+    segundoNombre?: string
+    primerApellido: string
+    segundoApellido?: string
+    rut: string
+    email: string
+    rol: string
+    infoBancaria?: { banco: string; tipoCuenta: string; numeroCuenta: string }
+  }) =>
     req<ApiUser>("/api/users", {
       method: "POST",
       body: JSON.stringify(data),

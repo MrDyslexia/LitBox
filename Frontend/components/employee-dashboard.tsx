@@ -13,6 +13,7 @@ import {
   ChevronRight,
   CalendarDays,
   Menu,
+  Settings,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,19 +23,21 @@ import AppSidebar from "@/components/app-sidebar"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
 import StatusBadge from "@/components/status-badge"
 import { TIPOS_BOLETA, formatMonto, formatFecha, type Boleta, type BoletaTipo } from "@/lib/mock-data"
-import { boletasApi, uploadsApi, normalizeBoleta } from "@/lib/api"
+import { boletasApi, uploadsApi, normalizeBoleta, ApiError } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
 import type { User } from "@/app/page"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
+import ConfiguracionPerfil from "@/components/configuracion-perfil"
 
-type View = "dashboard" | "historial" | "nueva"
+type View = "dashboard" | "historial" | "nueva" | "configuracion"
 
 interface EmployeeDashboardProps {
   user: User
   onLogout: () => void
+  onUpdate: (updates: { name: string; email: string; avatar: string }) => void
 }
 
-export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardProps) {
+export default function EmployeeDashboard({ user, onLogout, onUpdate }: EmployeeDashboardProps) {
   const [view, setView] = useState<View>("dashboard")
   const [search, setSearch] = useState("")
   const [selectedBoleta, setSelectedBoleta] = useState<Boleta | null>(null)
@@ -108,12 +111,28 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
       active: view === "nueva",
       onClick: () => { setView("nueva"); setSelectedBoleta(null) },
     },
+    {
+      icon: <Settings className="w-4 h-4" />,
+      label: "Mi perfil",
+      active: view === "configuracion",
+      onClick: () => { setView("configuracion"); setSelectedBoleta(null) },
+    },
   ]
 
   const handleSubmitBoleta = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
     setSubmitError("")
+
+    // Validar que la fecha no sea futura
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const selectedDate = new Date(newForm.fecha + "T00:00:00")
+    if (selectedDate > today) {
+      setSubmitError("La fecha del gasto no puede ser posterior a hoy.")
+      setSubmitting(false)
+      return
+    }
 
     try {
       let imagen: { url: string; nombre: string; tipo: string; tamano: number } | undefined
@@ -133,7 +152,11 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
       await loadData()
       setSubmitted(true)
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Error al enviar la boleta")
+      if (err instanceof ApiError && err.status === 401) {
+        setSubmitError("Tu usuario está inactivo y no tiene permitido generar nuevas boletas. Por favor, comunícate con la administración.")
+      } else {
+        setSubmitError(err instanceof Error ? err.message : "Error al enviar la boleta")
+      }
     } finally {
       setSubmitting(false)
     }
@@ -165,7 +188,7 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
           className="text-white/80 hover:text-white transition-colors p-1"
           aria-label="Abrir menú"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-5 h-5" color="white"/>
         </button>
       </header>
 
@@ -443,6 +466,11 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
           </div>
         )}
 
+        {/* Perfil */}
+        {view === "configuracion" && (
+          <ConfiguracionPerfil user={user} onBack={() => setView("dashboard")} onUpdate={onUpdate} />
+        )}
+
         {/* Nueva boleta */}
         {view === "nueva" && (
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-2xl">
@@ -522,6 +550,7 @@ export default function EmployeeDashboard({ user, onLogout }: EmployeeDashboardP
                         <Input
                           type="date"
                           value={newForm.fecha}
+                          max={new Date().toISOString().split("T")[0]}
                           onChange={(e) => setNewForm({ ...newForm, fecha: e.target.value })}
                           required
                           className="h-11"

@@ -27,22 +27,22 @@ const IMAGEN_EJEMPLO = {
 // ─── Crear usuarios ───────────────────────────────────────────────────────────
 const [admin, auditor1, auditor2, gestor, ...empleados] = await User.create([
   // Administradores
-  { nombre: "Ana Martínez",     email: "admin@empresa.com",            password: "demo1234", rol: "administrador" },
+  { primerNombre: "Ana",       primerApellido: "Martínez",  rut: "12.345.678-9", email: "admin@empresa.com",            password: "demo1234", rol: "administrador" },
   // Auditores
-  { nombre: "Carlos Ramírez",   email: "auditor@empresa.com",          password: "demo1234", rol: "auditor" },
-  { nombre: "Sofía Herrera",    email: "sofia.herrera@empresa.com",    password: "demo1234", rol: "auditor" },
+  { primerNombre: "Carlos",    primerApellido: "Ramírez",   rut: "11.234.567-8", email: "auditor@empresa.com",          password: "demo1234", rol: "auditor" },
+  { primerNombre: "Sofía",     primerApellido: "Herrera",   rut: "10.123.456-7", email: "sofia.herrera@empresa.com",    password: "demo1234", rol: "auditor" },
   // Gestores
-  { nombre: "Roberto Fuentes",  email: "gestor@empresa.com",           password: "demo1234", rol: "gestor" },
-  // Empleados
-  { nombre: "María González",   email: "empleado@empresa.com",         password: "demo1234", rol: "empleado" },
-  { nombre: "Juan Pérez",       email: "juan.perez@empresa.com",       password: "demo1234", rol: "empleado" },
-  { nombre: "Diego Morales",    email: "diego.morales@empresa.com",    password: "demo1234", rol: "empleado" },
-  { nombre: "Valentina Rojas",  email: "valentina.rojas@empresa.com",  password: "demo1234", rol: "empleado" },
-  { nombre: "Sebastián Castro", email: "sebastian.castro@empresa.com", password: "demo1234", rol: "empleado" },
-  { nombre: "Camila Torres",    email: "camila.torres@empresa.com",    password: "demo1234", rol: "empleado" },
-  { nombre: "Matías Vargas",    email: "matias.vargas@empresa.com",    password: "demo1234", rol: "empleado" },
-  { nombre: "Isidora Pinto",    email: "isidora.pinto@empresa.com",    password: "demo1234", rol: "empleado" },
-  { nombre: "Felipe Naranjo",   email: "felipe.naranjo@empresa.com",   password: "demo1234", rol: "empleado" },
+  { primerNombre: "Roberto",   primerApellido: "Fuentes",   rut: "9.876.543-2",  email: "gestor@empresa.com",           password: "demo1234", rol: "gestor" },
+  // Empleados — esNuevo: true para testing del protocolo de primer acceso
+  { primerNombre: "María",     primerApellido: "González",  rut: "8.765.432-1",  email: "empleado@empresa.com",         password: "demo1234", rol: "empleado", esNuevo: true },
+  { primerNombre: "Juan",      primerApellido: "Pérez",     rut: "7.654.321-k",  email: "juan.perez@empresa.com",       password: "demo1234", rol: "empleado", esNuevo: true },
+  { primerNombre: "Diego",     primerApellido: "Morales",   rut: "6.543.210-9",  email: "diego.morales@empresa.com",    password: "demo1234", rol: "empleado", esNuevo: true },
+  { primerNombre: "Valentina", primerApellido: "Rojas",     rut: "5.432.109-8",  email: "valentina.rojas@empresa.com",  password: "demo1234", rol: "empleado", esNuevo: true },
+  { primerNombre: "Sebastián", primerApellido: "Castro",    rut: "14.567.890-3", email: "sebastian.castro@empresa.com", password: "demo1234", rol: "empleado", esNuevo: true },
+  { primerNombre: "Camila",    primerApellido: "Torres",    rut: "15.678.901-4", email: "camila.torres@empresa.com",    password: "demo1234", rol: "empleado", esNuevo: true },
+  { primerNombre: "Matías",    primerApellido: "Vargas",    rut: "16.789.012-5", email: "matias.vargas@empresa.com",    password: "demo1234", rol: "empleado", esNuevo: true },
+  { primerNombre: "Isidora",   primerApellido: "Pinto",     rut: "17.890.123-6", email: "isidora.pinto@empresa.com",    password: "demo1234", rol: "empleado", esNuevo: true },
+  { primerNombre: "Felipe",    primerApellido: "Naranjo",   rut: "18.901.234-7", email: "felipe.naranjo@empresa.com",   password: "demo1234", rol: "empleado", esNuevo: true },
 ])
 
 console.log(`  ✓ ${1 + 2 + 1 + empleados.length} usuarios creados`)

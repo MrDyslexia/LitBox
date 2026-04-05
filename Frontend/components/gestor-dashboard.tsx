@@ -15,6 +15,7 @@ import {
   X,
   ImageIcon,
   ExternalLink,
+  Settings,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,14 +28,16 @@ import { boletasApi, uploadsApi, normalizeBoleta } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
 import type { User } from "@/app/page"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
+import ConfiguracionPerfil from "@/components/configuracion-perfil"
 
-type View = "dashboard" | "por_pagar" | "historial"
+type View = "dashboard" | "por_pagar" | "historial" | "configuracion"
 
 const GESTOR_COLOR = "oklch(0.52 0.18 290)"
 
 interface GestorDashboardProps {
   user: User
   onLogout: () => void
+  onUpdate: (updates: { name: string; email: string; avatar: string }) => void
 }
 
 // ─── Modal de confirmación de pago ───────────────────────────────────────────
@@ -231,7 +234,7 @@ function PayModal({ boleta, onConfirm, onClose }: PayModalProps) {
 
 // ─── Dashboard principal ──────────────────────────────────────────────────────
 
-export default function GestorDashboard({ user, onLogout }: GestorDashboardProps) {
+export default function GestorDashboard({ user, onLogout, onUpdate }: GestorDashboardProps) {
   const [view, setView] = useState<View>("dashboard")
   const [boletas, setBoletas] = useState<Boleta[]>([])
   const [stats, setStats] = useState<ApiStats | null>(null)
@@ -309,6 +312,12 @@ export default function GestorDashboard({ user, onLogout }: GestorDashboardProps
       active: view === "historial",
       onClick: () => setView("historial"),
     },
+    {
+      icon: <Settings className="w-4 h-4" />,
+      label: "Mi perfil",
+      active: view === "configuracion",
+      onClick: () => setView("configuracion"),
+    },
   ]
 
   const montoPorPagar = porPagar.reduce((s, b) => s + b.monto, 0)
@@ -332,7 +341,7 @@ export default function GestorDashboard({ user, onLogout }: GestorDashboardProps
           className="text-white/80 hover:text-white transition-colors p-1"
           aria-label="Abrir menú"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-5 h-5" color="white"/>
         </button>
       </header>
 
@@ -625,6 +634,10 @@ export default function GestorDashboard({ user, onLogout }: GestorDashboardProps
           </div>
         )}
 
+        {/* Perfil */}
+        {view === "configuracion" && (
+          <ConfiguracionPerfil user={user} onBack={() => setView("dashboard")} onUpdate={onUpdate} />
+        )}
       </main>
 
       {/* Modal de pago */}

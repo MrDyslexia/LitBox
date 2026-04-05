@@ -1,7 +1,15 @@
+import { randomBytes } from "crypto"
 import { User } from "../models/User"
 import { Boleta } from "../models/Boleta"
 import type { UsuarioFiltros, UserRole } from "../types"
 import { notificarBienvenida } from "../services/notificaciones.service"
+
+// ─── Generador de contraseña ──────────────────────────────────────────────────
+
+function generarPassword(): string {
+  // 12 caracteres URL-safe (letras + números)
+  return randomBytes(9).toString("base64url")
+}
 
 // ─── Listar usuarios ──────────────────────────────────────────────────────────
 
@@ -13,8 +21,9 @@ export async function listarUsuarios(filtros: UsuarioFiltros) {
   if (activo !== undefined) query.activo = activo
   if (buscar) {
     query.$or = [
-      { nombre: { $regex: buscar, $options: "i" } },
-      { email: { $regex: buscar, $options: "i" } },
+      { nombre:        { $regex: buscar, $options: "i" } },
+      { email:         { $regex: buscar, $options: "i" } },
+      { rut:           { $regex: buscar, $options: "i" } },
     ]
   }
 
@@ -29,7 +38,6 @@ export async function listarUsuarios(filtros: UsuarioFiltros) {
     User.countDocuments(query),
   ])
 
-  // Agregar cantidad de boletas por usuario
   const ids = items.map((u) => u._id)
   const boletaCounts = await Boleta.aggregate([
     { $match: { empleado: { $in: ids } } },
@@ -58,23 +66,38 @@ export async function obtenerUsuario(id: string) {
 // ─── Crear usuario (admin) ────────────────────────────────────────────────────
 
 export async function crearUsuario(data: {
-  nombre: string
+  primerNombre: string
+  segundoNombre?: string
+  primerApellido: string
+  segundoApellido?: string
+  rut: string
   email: string
-  password: string
   rol: UserRole
+  infoBancaria?: {
+    banco: string
+    tipoCuenta: "corriente" | "vista" | "ahorro"
+    numeroCuenta: string
+  }
 }) {
-  const existe = await User.findOne({ email: data.email.toLowerCase() })
-  if (existe) {
+  const [existeEmail, existeRut] = await Promise.all([
+    User.findOne({ email: data.email.toLowerCase() }),
+    User.findOne({ rut: data.rut }),
+  ])
+  if (existeEmail) {
     throw Object.assign(new Error("Ya existe un usuario con ese email"), { status: 409 })
   }
+  if (existeRut) {
+    throw Object.assign(new Error("Ya existe un usuario con ese RUT"), { status: 409 })
+  }
 
-  const user = await User.create(data)
+  const password = generarPassword()
 
-  // Email de bienvenida con credenciales (async, no bloquea)
+  const user = await User.create({ ...data, password, esNuevo: true })
+
   notificarBienvenida({
-    nombre: data.nombre,
+    nombre: user.nombre,
     email: data.email,
-    password: data.password,
+    password,
     rol: data.rol,
   }).catch((err) => console.error("[notif] bienvenida:", err))
 
@@ -85,17 +108,26 @@ export async function crearUsuario(data: {
 
 export async function actualizarUsuario(
   id: string,
-  data: Partial<{ nombre: string; rol: UserRole; activo: boolean; password: string }>
+  data: Partial<{
+    primerNombre: string
+    segundoNombre: string
+    primerApellido: string
+    segundoApellido: string
+    rut: string
+    rol: UserRole
+    activo: boolean
+    infoBancaria: { banco: string; tipoCuenta: string; numeroCuenta: string }
+  }>
 ) {
-  const user = await User.findByIdAndUpdate(id, data, {
-    new: true,
-    runValidators: true,
-  }).lean()
-
+  const user = await User.findById(id)
   if (!user) {
     throw Object.assign(new Error("Usuario no encontrado"), { status: 404 })
   }
-  return user
+
+  Object.assign(user, data)
+  await user.save()
+
+  return user.toPublic()
 }
 
 // ─── Toggle activo/inactivo ───────────────────────────────────────────────────
@@ -120,6 +152,5 @@ export async function eliminarUsuario(id: string) {
     throw Object.assign(new Error("Usuario no encontrado"), { status: 404 })
   }
 
-  // Las boletas quedan huérfanas para historial — decisión de negocio
   return { mensaje: "Usuario eliminado correctamente" }
 }

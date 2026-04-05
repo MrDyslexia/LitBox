@@ -14,11 +14,22 @@ export type BoletaTipoApi =
 
 export interface ApiUser {
   _id: string
+  primerNombre: string
+  segundoNombre?: string
+  primerApellido: string
+  segundoApellido?: string
   nombre: string
+  rut: string
   email: string
   rol: UserRole
   activo: boolean
   avatar: string
+  infoBancaria?: {
+    banco: string
+    tipoCuenta: "corriente" | "vista" | "ahorro"
+    numeroCuenta: string
+  }
+  esNuevo: boolean
   fechaCreacion: string
   ultimoAcceso?: string
   totalBoletas?: number
