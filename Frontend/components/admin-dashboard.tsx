@@ -478,7 +478,7 @@ export default function AdminDashboard({ user, onLogout, onUpdate }: AdminDashbo
 
             <Card className="border shadow-none overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[580px]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: "var(--secondary)", borderBottom: "1px solid var(--border)" }}>
                       <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">ID</th>
@@ -677,7 +677,7 @@ export default function AdminDashboard({ user, onLogout, onUpdate }: AdminDashbo
                       </button>
 
                       {newUser.showBancaria && (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
                           <div className="space-y-1.5">
                             <Label className="text-sm font-medium">Banco</Label>
                             <Input
@@ -753,7 +753,7 @@ export default function AdminDashboard({ user, onLogout, onUpdate }: AdminDashbo
 
             <Card className="border shadow-none overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[480px]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: "var(--secondary)", borderBottom: "1px solid var(--border)" }}>
                       <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Usuario</th>

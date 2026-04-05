@@ -189,7 +189,7 @@ export default function AuditorDashboard({ user, onLogout, onUpdate }: AuditorDa
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               {[
                 { label: "Por revisar", value: displayStats.pendientes, icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.62 0.14 72)", bg: "oklch(0.97 0.03 72)" },
                 { label: "Aprobadas", value: displayStats.aprobadas, icon: <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.58 0.14 162)", bg: "oklch(0.95 0.04 162)" },
@@ -381,7 +381,7 @@ export default function AuditorDashboard({ user, onLogout, onUpdate }: AuditorDa
                 <img
                   src={`${process.env.NEXT_PUBLIC_API_URL}${selected.imageUrl}`}
                   alt="Boleta"
-                  className="w-full object-contain max-h-72"
+                  className="w-full object-contain max-h-48 sm:max-h-72"
                 />
               ) : (
                 <div

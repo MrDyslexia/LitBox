@@ -96,7 +96,7 @@ function PayModal({ boleta, onConfirm, onClose }: PayModalProps) {
 
       {/* Panel */}
       <div
-        className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-full sm:max-w-md mx-4 sm:mx-0 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden"
         style={{ background: "var(--card)", border: "1px solid var(--border)" }}
       >
         {/* Header */}

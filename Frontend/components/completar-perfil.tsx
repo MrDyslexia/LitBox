@@ -196,7 +196,7 @@ export default function CompletarPerfil({ user, onComplete, onLogout }: Completa
                   </button>
 
                   {showBancaria && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Banco</Label>
                         <Input

@@ -385,7 +385,7 @@ export default function ConfiguracionPerfil({ user, onBack, onUpdate, embedded =
       {/* Sección: Info bancaria */}
       <Section icon={<Landmark className="w-4 h-4 text-muted-foreground" />} title="Información bancaria">
         <form onSubmit={handleSaveBanco} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">Banco</Label>
               <Input placeholder="Ej: Banco de Chile" value={banco} onChange={(e) => setBanco(e.target.value)} className="h-10" />

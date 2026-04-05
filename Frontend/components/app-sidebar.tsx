@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { Receipt, LogOut, X } from "lucide-react"
 import type { User } from "@/app/page"
 
@@ -18,7 +19,7 @@ function SidebarContent({
 }: AppSidebarProps & { showClose?: boolean }) {
   return (
     <aside
-      className="flex flex-col h-full w-64 shrink-0 font-sans"
+      className="flex flex-col h-full w-64 shrink-0 font-sans overflow-hidden"
       style={{ background: "var(--sidebar)" }}
     >
       {/* Logo bar */}
@@ -68,7 +69,7 @@ function SidebarContent({
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 py-2 overflow-y-auto">
+      <nav className="flex-1 py-2 overflow-y-auto min-h-0">
         {navItems.map((item, i) => (
           <button
             key={i}
@@ -124,6 +125,15 @@ function SidebarContent({
 export default function AppSidebar(props: AppSidebarProps) {
   const { mobileOpen, onMobileClose } = props
 
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+    return () => { document.body.style.overflow = "" }
+  }, [mobileOpen])
+
   return (
     <>
       {/* Desktop: sidebar in flow */}
@@ -133,13 +143,13 @@ export default function AppSidebar(props: AppSidebarProps) {
 
       {/* Mobile: overlay drawer */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 md:hidden overflow-hidden">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={onMobileClose}
             aria-hidden="true"
           />
-          <div className="absolute inset-y-0 left-0 shadow-xl">
+          <div className="absolute inset-y-0 left-0 h-full shadow-xl">
             <SidebarContent {...props} showClose />
           </div>
         </div>
