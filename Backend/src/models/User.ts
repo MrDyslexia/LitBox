@@ -25,6 +25,7 @@ export interface IUser extends Document {
   codigoReset?: string          // código numérico de 6 dígitos (plain, caduca rápido)
   codigoResetExpira?: Date
   fechaCreacion: Date
+  fechaActualizacion?: Date
   ultimoAcceso?: Date
   notificaciones?: {
     creacion: boolean

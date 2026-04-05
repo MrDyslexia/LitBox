@@ -190,7 +190,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     </div>
                     <div className="relative">
                       <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-10 sm:h-9 pr-10 text-[13px]" />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      <button type="button" aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                         {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
                     </div>
@@ -319,7 +319,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                       <Label className="text-[13px] font-medium">Nueva contraseña <span className="text-destructive">*</span></Label>
                       <div className="relative">
                         <Input type={showNewPass ? "text" : "password"} placeholder="Mínimo 8 caracteres" value={newPass} onChange={(e) => setNewPass(e.target.value)} className="h-10 sm:h-9 pr-10 text-[13px]" autoComplete="new-password" required />
-                        <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <button type="button" aria-label={showNewPass ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowNewPass(!showNewPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                           {showNewPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
                       </div>
@@ -336,7 +336,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                       <Label className="text-[13px] font-medium">Confirmar contraseña <span className="text-destructive">*</span></Label>
                       <div className="relative">
                         <Input type={showConfirmPass ? "text" : "password"} placeholder="Repite tu contraseña" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} className={`h-10 sm:h-9 pr-10 text-[13px] ${confirmPass && confirmPass !== newPass ? "border-destructive" : ""}`} autoComplete="new-password" required />
-                        <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <button type="button" aria-label={showConfirmPass ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                           {showConfirmPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
                       </div>

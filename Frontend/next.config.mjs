@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'provider.blocktype.cl' },
+      { protocol: 'http', hostname: 'localhost', port: '3001' },
+    ],
   },
   allowedDevOrigins: ['http://localhost:3000', 'https://blocktype.cl', 'blocktype.cl'],
 }

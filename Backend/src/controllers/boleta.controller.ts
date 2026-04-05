@@ -56,6 +56,9 @@ export async function listarBoletas(filtros: BoletaFiltros, authUser: AuthUser) 
 // ─── Obtener una boleta ───────────────────────────────────────────────────────
 
 export async function obtenerBoleta(id: string, authUser: AuthUser) {
+  if (!Types.ObjectId.isValid(id)) {
+    throw Object.assign(new Error("ID inválido"), { status: 400 })
+  }
   const boleta = await Boleta.findById(id)
     .populate("empleado", "nombre email avatar")
     .populate("auditor", "nombre email avatar")
@@ -142,6 +145,9 @@ export async function cambiarEstado(
   authUser: AuthUser,
   comprobante?: { url: string; nombre: string; tipo: string; tamano: number }
 ) {
+  if (!Types.ObjectId.isValid(id)) {
+    throw Object.assign(new Error("ID inválido"), { status: 400 })
+  }
   const boleta = await Boleta.findById(id)
   if (!boleta) {
     throw Object.assign(new Error("Boleta no encontrada"), { status: 404 })
@@ -170,11 +176,11 @@ export async function cambiarEstado(
     if (!comprobante) {
       throw Object.assign(new Error("Se requiere un comprobante de pago"), { status: 422 })
     }
-    boleta.gestor = authUser._id as unknown as typeof boleta.gestor
+    boleta.gestor = new Types.ObjectId(authUser._id)
     boleta.fechaPago = new Date()
     boleta.comprobante = comprobante
   } else {
-    boleta.auditor = authUser._id as unknown as typeof boleta.auditor
+    boleta.auditor = new Types.ObjectId(authUser._id)
     boleta.fechaRevision = new Date()
     if (comentario) boleta.comentarioAuditor = comentario
   }
@@ -224,6 +230,9 @@ export async function cambiarEstado(
 // ─── Eliminar boleta (admin) ──────────────────────────────────────────────────
 
 export async function eliminarBoleta(id: string, authUser: AuthUser) {
+  if (!Types.ObjectId.isValid(id)) {
+    throw Object.assign(new Error("ID inválido"), { status: 400 })
+  }
   const boleta = await Boleta.findByIdAndDelete(id)
   if (!boleta) {
     throw Object.assign(new Error("Boleta no encontrada"), { status: 404 })

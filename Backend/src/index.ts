@@ -3,6 +3,7 @@ import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { connectDB } from "./config/database";
 import { env } from "./config/env";
+import { jwtPlugin } from "./middleware/auth";
 import { authRoutes } from "./routes/auth";
 import { boletaRoutes } from "./routes/boletas";
 import { userRoutes } from "./routes/users";
@@ -16,6 +17,7 @@ await connectDB();
 
 // ─── Aplicación Elysia ────────────────────────────────────────────────────────
 const app = new Elysia()
+  .use(jwtPlugin)
 
   // ── Plugins globales ──────────────────────────────────────────────────────
   .use(
@@ -102,6 +104,18 @@ const app = new Elysia()
 
   // ── WebSocket — notificaciones en tiempo real ─────────────────────────────
   .ws("/ws", {
+    async beforeHandle({ cookie, jwt, set }) {
+      const token = cookie.auth?.value
+      if (!token) {
+        set.status = 401
+        throw new Error("No autenticado")
+      }
+      const payload = await jwt.verify(token as string)
+      if (!payload) {
+        set.status = 401
+        throw new Error("Token inválido o expirado")
+      }
+    },
     open(ws) {
       addClient(ws)
       console.log(`WS: cliente conectado (total: ${clientCount()})`)

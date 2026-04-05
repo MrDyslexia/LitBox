@@ -1,5 +1,6 @@
 import mongoose, { type Document, type Model, Schema, Types } from "mongoose"
 import type { BoletaEstado, BoletaTipo } from "../types"
+import { Counter } from "./Counter"
 
 // ─── Interfaz del documento ───────────────────────────────────────────────────
 
@@ -138,17 +139,12 @@ boletaSchema.index({ tipo: 1 })
 
 boletaSchema.pre("save", async function (next) {
   if (this.isNew && !this.codigo) {
-    const ultima = await Boleta.findOne({}, { codigo: 1 })
-      .sort({ fechaCreacion: -1 })
-      .lean()
-
-    let siguiente = 1
-    if (ultima?.codigo) {
-      const num = Number.parseInt(ultima.codigo.replace("BOL-", ""), 10)
-      if (!Number.isNaN(num)) siguiente = num + 1
-    }
-
-    this.codigo = `BOL-${String(siguiente).padStart(3, "0")}`
+    const counter = await Counter.findOneAndUpdate(
+      { _id: "boleta" },
+      { $inc: { seq: 1 } },
+      { upsert: true, new: true }
+    )
+    this.codigo = `BOL-${String(counter.seq).padStart(3, "0")}`
   }
   next()
 })

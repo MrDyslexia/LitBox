@@ -1,14 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-
-const _inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'LitBox — Gestión de Boletas',
   description: 'Plataforma de gestión de reembolsos de gastos para empleados, auditores y administradores.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
@@ -35,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased" suppressHydrationWarning>
         {children}
         <Analytics />
       </body>

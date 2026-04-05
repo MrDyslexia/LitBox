@@ -50,10 +50,11 @@ export async function notificarBoletaCreada(boleta: BoletaInfo, empleado: Emplea
     }),
   })
 
-  // 2. Auditores activos: alerta de revisión pendiente
-  const auditores = await getAuditores()
-  for (const auditor of auditores) {
-    await sendMail({
+  // 2. Auditores activos + admins con toggle "creacion" en paralelo
+  const [auditores, admins] = await Promise.all([getAuditores(), getAdmins()])
+
+  const mailPromises: Promise<void>[] = auditores.map((auditor) =>
+    sendMail({
       to: auditor.email,
       subject: `[LitBox] Nueva boleta pendiente de revisión — ${boleta.codigo}`,
       html: tmplBoletaPendienteAuditor({
@@ -64,26 +65,28 @@ export async function notificarBoletaCreada(boleta: BoletaInfo, empleado: Emplea
         monto: boleta.monto,
       }),
     })
-  }
+  )
 
-  // 3. Admins con toggle "creacion" activo
-  const admins = await getAdmins()
   for (const admin of admins) {
-    const notif = (admin as any).notificaciones
+    const notif = admin.notificaciones
     if (!notif || notif.creacion) {
-      await sendMail({
-        to: admin.email,
-        subject: `[LitBox] Nueva boleta creada — ${boleta.codigo}`,
-        html: tmplBoletaPendienteAuditor({
-          auditorNombre: admin.nombre,
-          empleadoNombre: empleado.nombre,
-          codigo: boleta.codigo,
-          tipo: boleta.tipo,
-          monto: boleta.monto,
-        }),
-      })
+      mailPromises.push(
+        sendMail({
+          to: admin.email,
+          subject: `[LitBox] Nueva boleta creada — ${boleta.codigo}`,
+          html: tmplBoletaPendienteAuditor({
+            auditorNombre: admin.nombre,
+            empleadoNombre: empleado.nombre,
+            codigo: boleta.codigo,
+            tipo: boleta.tipo,
+            monto: boleta.monto,
+          }),
+        })
+      )
     }
   }
+
+  await Promise.allSettled(mailPromises)
 }
 
 export async function notificarBoletaAprobada(
@@ -103,12 +106,12 @@ export async function notificarBoletaAprobada(
     }),
   })
 
-  // 2. Admins con toggle "aprobacion" activo
+  // 2. Admins con toggle "aprobacion" activo — en paralelo
   const admins = await getAdmins()
-  for (const admin of admins) {
-    const notif = (admin as any).notificaciones
-    if (!notif || notif.aprobacion) {
-      await sendMail({
+  const adminMails = admins
+    .filter((admin) => !admin.notificaciones || admin.notificaciones.aprobacion)
+    .map((admin) =>
+      sendMail({
         to: admin.email,
         subject: `[LitBox] Boleta aprobada — ${boleta.codigo}`,
         html: tmplBoletaAprobada({
@@ -118,8 +121,8 @@ export async function notificarBoletaAprobada(
           comentario,
         }),
       })
-    }
-  }
+    )
+  await Promise.allSettled(adminMails)
 }
 
 export async function notificarBoletaRechazada(
@@ -139,12 +142,12 @@ export async function notificarBoletaRechazada(
     }),
   })
 
-  // 2. Admins con toggle "rechazo" activo
+  // 2. Admins con toggle "rechazo" activo — en paralelo
   const admins = await getAdmins()
-  for (const admin of admins) {
-    const notif = (admin as any).notificaciones
-    if (!notif || notif.rechazo) {
-      await sendMail({
+  const adminMails = admins
+    .filter((admin) => !admin.notificaciones || admin.notificaciones.rechazo)
+    .map((admin) =>
+      sendMail({
         to: admin.email,
         subject: `[LitBox] Boleta rechazada — ${boleta.codigo}`,
         html: tmplBoletaRechazada({
@@ -154,8 +157,8 @@ export async function notificarBoletaRechazada(
           motivo,
         }),
       })
-    }
-  }
+    )
+  await Promise.allSettled(adminMails)
 }
 
 export async function notificarBienvenida(opts: {

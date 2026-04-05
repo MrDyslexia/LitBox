@@ -7,7 +7,30 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { auth } from "@/lib/api"
-import type { User } from "@/app/page"
+import type { User } from "@/lib/user-types"
+
+const BANCOS_CHILE = [
+  "Banco de Chile",
+  "Banco Santander Chile",
+  "Banco BCI",
+  "BancoEstado",
+  "Banco Itaú Chile",
+  "Banco BICE",
+  "Banco Security",
+  "Banco Scotiabank Chile",
+  "Banco Internacional",
+  "Banco Consorcio",
+  "Banco Ripley",
+  "Banco Falabella",
+  "HSBC Bank Chile",
+  "Banco BTG Pactual Chile",
+  "Coopeuch",
+  "Mercado Pago",
+  "Tenpo",
+  "MACH",
+  "Prepago Los Héroes",
+  "Tapp",
+]
 
 interface CompletarPerfilProps {
   user: User
@@ -36,6 +59,8 @@ export default function CompletarPerfil({ user, onComplete, onLogout }: Completa
     if (password !== confirmPassword) errs.confirm = "Las contraseñas no coinciden."
     if (showBancaria && (!banco || !numeroCuenta)) {
       errs.bancaria = "Completa todos los campos bancarios o desmarca la sección."
+    } else if (showBancaria && numeroCuenta && !/^\d{6,20}$/.test(numeroCuenta)) {
+      errs.bancaria = "El número de cuenta debe contener solo dígitos (6–20 caracteres)."
     }
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -134,6 +159,7 @@ export default function CompletarPerfil({ user, onComplete, onLogout }: Completa
                     />
                     <button
                       type="button"
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
@@ -170,6 +196,7 @@ export default function CompletarPerfil({ user, onComplete, onLogout }: Completa
                     />
                     <button
                       type="button"
+                      aria-label={showConfirm ? "Ocultar contraseña" : "Mostrar contraseña"}
                       onClick={() => setShowConfirm(!showConfirm)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
@@ -199,12 +226,15 @@ export default function CompletarPerfil({ user, onComplete, onLogout }: Completa
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Banco</Label>
-                        <Input
-                          placeholder="Ej: Banco de Chile"
+                        <select
+                          className="w-full h-10 px-3 rounded-lg border text-sm bg-background text-foreground"
+                          style={{ borderColor: "var(--border)" }}
                           value={banco}
                           onChange={(e) => setBanco(e.target.value)}
-                          className="h-10"
-                        />
+                        >
+                          <option value="">Seleccionar banco...</option>
+                          {BANCOS_CHILE.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Tipo de cuenta</Label>
@@ -212,7 +242,7 @@ export default function CompletarPerfil({ user, onComplete, onLogout }: Completa
                           className="w-full h-10 px-3 rounded-lg border text-sm bg-background text-foreground"
                           style={{ borderColor: "var(--border)" }}
                           value={tipoCuenta}
-                          onChange={(e) => setTipoCuenta(e.target.value as any)}
+                          onChange={(e) => setTipoCuenta(e.target.value as "corriente" | "vista" | "ahorro")}
                         >
                           <option value="corriente">Cuenta Corriente</option>
                           <option value="vista">Cuenta Vista</option>

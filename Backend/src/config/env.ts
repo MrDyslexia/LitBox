@@ -23,7 +23,11 @@ export const env = {
     uri: process.env.MONGODB_URI ?? "mongodb://localhost:27017/litbox",
   },
   jwt: {
-    secret: process.env.JWT_SECRET ?? "dev_secret_inseguro",
+    secret: (() => {
+      const s = process.env.JWT_SECRET
+      if (!s) throw new Error("JWT_SECRET debe estar configurado")
+      return s
+    })(),
     expiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
   },
   uploads: {

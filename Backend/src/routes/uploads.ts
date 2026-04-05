@@ -11,9 +11,34 @@ const UPLOAD_DIR = resolve(env.uploads.dir)
 await mkdir(UPLOAD_DIR, { recursive: true })
 
 export const uploadRoutes = new Elysia({ prefix: "/uploads" })
-  .use(authMiddleware)
 
-  // POST /api/uploads — subir imagen de boleta
+  // GET /api/uploads/:filename — servir archivo (sin auth: las URLs son únicas por timestamp)
+  .get(
+    "/:filename",
+    async ({ params, set }) => {
+      const ruta = join(UPLOAD_DIR, params.filename)
+
+      // Prevenir path traversal
+      if (!ruta.startsWith(UPLOAD_DIR + "/")) {
+        set.status = 400
+        throw new Error("Ruta inválida")
+      }
+
+      const archivo = Bun.file(ruta)
+      const existe = await archivo.exists()
+
+      if (!existe) {
+        set.status = 404
+        throw new Error("Archivo no encontrado")
+      }
+
+      return new Response(archivo)
+    },
+    { detail: { summary: "Obtener archivo subido", tags: ["Uploads"] } }
+  )
+
+  // POST /api/uploads — subir archivo (requiere auth)
+  .use(authMiddleware)
   .post(
     "/",
     async ({ body, set }) => {
@@ -56,29 +81,4 @@ export const uploadRoutes = new Elysia({ prefix: "/uploads" })
       }),
       detail: { summary: "Subir imagen de boleta", tags: ["Uploads"] },
     }
-  )
-
-  // GET /api/uploads/:filename — servir archivo
-  .get(
-    "/:filename",
-    async ({ params, set }) => {
-      const ruta = join(UPLOAD_DIR, params.filename)
-
-      // Prevenir path traversal
-      if (!ruta.startsWith(UPLOAD_DIR)) {
-        set.status = 400
-        throw new Error("Ruta inválida")
-      }
-
-      const archivo = Bun.file(ruta)
-      const existe = await archivo.exists()
-
-      if (!existe) {
-        set.status = 404
-        throw new Error("Archivo no encontrado")
-      }
-
-      return new Response(archivo)
-    },
-    { detail: { summary: "Obtener archivo subido", tags: ["Uploads"] } }
   )

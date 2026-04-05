@@ -1,13 +1,21 @@
 "use client"
 
 import { useEffect } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Receipt, LogOut, X } from "lucide-react"
-import type { User } from "@/app/page"
+import { useUser } from "@/contexts/user-context"
+
+export interface NavItem {
+  icon: React.ReactNode
+  label: string
+  href?: string
+  active?: boolean
+  onClick?: () => void
+}
 
 interface AppSidebarProps {
-  readonly user: User
-  readonly onLogout: () => void
-  readonly navItems: { icon: React.ReactNode; label: string; active?: boolean; onClick?: () => void }[]
+  readonly navItems: NavItem[]
   readonly roleLabel: string
   readonly roleColor: string
   readonly mobileOpen?: boolean
@@ -15,8 +23,15 @@ interface AppSidebarProps {
 }
 
 function SidebarContent({
-  user, onLogout, navItems, roleLabel, roleColor, onMobileClose, showClose,
+  navItems, roleLabel, roleColor, onMobileClose, showClose,
 }: AppSidebarProps & { showClose?: boolean }) {
+  const { user, onLogout } = useUser()
+  const pathname = usePathname()
+
+  const activeHref = navItems
+    .filter(item => item.href && (pathname === item.href || pathname.startsWith(item.href + "/")))
+    .sort((a, b) => (b.href?.length ?? 0) - (a.href?.length ?? 0))[0]?.href
+
   return (
     <aside
       className="flex flex-col h-full w-64 shrink-0 font-sans overflow-hidden"
@@ -70,33 +85,58 @@ function SidebarContent({
 
       {/* Nav items */}
       <nav className="flex-1 py-2 overflow-y-auto min-h-0">
-        {navItems.map((item, i) => (
-          <button
-            key={i}
-            onClick={() => { item.onClick?.(); onMobileClose?.() }}
-            className="w-full flex items-center gap-3 px-5 py-3 text-[13px] font-medium transition-all text-left relative"
-            style={
-              item.active
-                ? { background: "var(--sidebar-accent)", color: "white", borderLeft: "3px solid var(--accent)" }
-                : { color: "oklch(0.65 0.02 230)", borderLeft: "3px solid transparent" }
+        {navItems.map((item, i) => {
+          const isActive = item.href
+            ? item.href === activeHref
+            : (item.active ?? false)
+
+          const activeStyle = { background: "var(--sidebar-accent)", color: "white", borderLeft: "3px solid var(--accent)" }
+          const inactiveStyle = { color: "oklch(0.65 0.02 230)", borderLeft: "3px solid transparent" }
+
+          const handleMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
+            if (!isActive) {
+              ;(e.currentTarget as HTMLElement).style.background = "var(--sidebar-accent)"
+              ;(e.currentTarget as HTMLElement).style.color = "oklch(0.88 0.01 230)"
             }
-            onMouseEnter={(e) => {
-              if (!item.active) {
-                ;(e.currentTarget as HTMLButtonElement).style.background = "var(--sidebar-accent)"
-                ;(e.currentTarget as HTMLButtonElement).style.color = "oklch(0.88 0.01 230)"
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!item.active) {
-                ;(e.currentTarget as HTMLButtonElement).style.background = "transparent"
-                ;(e.currentTarget as HTMLButtonElement).style.color = "oklch(0.65 0.02 230)"
-              }
-            }}
-          >
-            <span className="w-4 h-4 shrink-0 opacity-80">{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
+          }
+          const handleMouseLeave = (e: React.MouseEvent<HTMLElement>) => {
+            if (!isActive) {
+              ;(e.currentTarget as HTMLElement).style.background = "transparent"
+              ;(e.currentTarget as HTMLElement).style.color = "oklch(0.65 0.02 230)"
+            }
+          }
+
+          if (item.href) {
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onMobileClose}
+                className="w-full flex items-center gap-3 px-5 py-3 text-[13px] font-medium transition-all text-left relative"
+                style={isActive ? activeStyle : inactiveStyle}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
+                <span className="w-4 h-4 shrink-0 opacity-80">{item.icon}</span>
+                {item.label}
+              </Link>
+            )
+          }
+
+          return (
+            <button
+              key={item.label}
+              onClick={() => { item.onClick?.(); onMobileClose?.() }}
+              className="w-full flex items-center gap-3 px-5 py-3 text-[13px] font-medium transition-all text-left relative"
+              style={isActive ? activeStyle : inactiveStyle}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <span className="w-4 h-4 shrink-0 opacity-80">{item.icon}</span>
+              {item.label}
+            </button>
+          )
+        })}
       </nav>
 
       {/* Logout */}

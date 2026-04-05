@@ -1,7 +1,7 @@
 import type { ApiUser, ApiBoleta, ApiStats, ApiPaginated, NotificacionesConfig } from "./types"
 import type { Boleta } from "./mock-data"
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
 // ─── Error tipado ─────────────────────────────────────────────────────────────
 
 export class ApiError extends Error {
@@ -48,6 +48,7 @@ export function normalizeBoleta(b: ApiBoleta): Boleta & { _id: string } {
     empleadoNombre: b.empleado?.nombre ?? "",
     empleadoEmail: b.empleado?.email ?? "",
     imageUrl: b.imagen?.url ?? "",
+    imageTipo: b.imagen?.tipo,
     comentarioAuditor: b.comentarioAuditor,
     fechaRevision: b.fechaRevision ? b.fechaRevision.split("T")[0] : undefined,
     gestorNombre: b.gestor?.nombre,
@@ -60,7 +61,7 @@ export function normalizeBoleta(b: ApiBoleta): Boleta & { _id: string } {
 
 export const auth = {
   login: (email: string, password: string) =>
-    req<{ token: string; user: ApiUser }>("/api/auth/login", {
+    req<{ user: ApiUser }>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
@@ -161,6 +162,9 @@ export const boletasApi = {
       method: "PATCH",
       body: JSON.stringify({ comprobante }),
     }),
+
+  getById: (id: string) =>
+    req<ApiBoleta>(`/api/boletas/${id}`),
 
   eliminar: (id: string) =>
     req<{ mensaje: string }>(`/api/boletas/${id}`, { method: "DELETE" }),

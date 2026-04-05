@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia"
 import { authMiddleware } from "../middleware/auth"
+import type { UserRole } from "../types"
 import {
   listarUsuarios,
   obtenerUsuario,
@@ -46,8 +47,8 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         ({ query }) =>
           listarUsuarios({
             page:   query.page   ? Number(query.page)  : 1,
-            limit:  query.limit  ? Number(query.limit) : 20,
-            rol:    query.rol    as any,
+            limit:  query.limit  ? Math.min(Number(query.limit), 100) : 20,
+            rol:    query.rol    as UserRole | undefined,
             activo: query.activo === undefined ? undefined : query.activo === "true",
             buscar: query.buscar,
           }),
@@ -73,7 +74,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
       // POST /api/users
       .post(
         "/",
-        ({ body }) => crearUsuario(body as any),
+        ({ body }) => crearUsuario(body),
         {
           body: t.Object({
             primerNombre:   t.String({ minLength: 1, maxLength: 50 }),
@@ -92,14 +93,14 @@ export const userRoutes = new Elysia({ prefix: "/users" })
       // PATCH /api/users/:id
       .patch(
         "/:id",
-        ({ params, body }) => actualizarUsuario(params.id, body as any),
+        ({ params, body }) => actualizarUsuario(params.id, body),
         {
           body: t.Object({
             primerNombre:    t.Optional(t.String({ minLength: 1 })),
             segundoNombre:   t.Optional(t.String()),
             primerApellido:  t.Optional(t.String({ minLength: 1 })),
             segundoApellido: t.Optional(t.String()),
-            rut:             t.Optional(t.String()),
+            rut:             t.Optional(t.String({ pattern: "^\\d{1,2}\\.\\d{3}\\.\\d{3}-[\\dkK]$" })),
             rol:             t.Optional(rolEnum),
             activo:          t.Optional(t.Boolean()),
             infoBancaria:    t.Optional(infoBancariaSchema),

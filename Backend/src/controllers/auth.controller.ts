@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs"
 import { User } from "../models/User"
 import { AuditLog } from "../models/AuditLog"
 import { sendMail } from "../services/email.service"
@@ -92,7 +93,7 @@ export async function solicitarCodigoCambio(userId: string) {
   if (!user) throw Object.assign(new Error("Usuario no encontrado"), { status: 404 })
 
   const codigo = generarCodigo()
-  user.codigoReset = codigo
+  user.codigoReset = await bcrypt.hash(codigo, 10)
   user.codigoResetExpira = expiresIn15()
   await user.save()
 
@@ -111,12 +112,13 @@ export async function confirmarCambioPassword(userId: string, codigo: string, pa
   const user = await User.findById(userId).select("+password")
   if (!user) throw Object.assign(new Error("Usuario no encontrado"), { status: 404 })
 
-  if (
-    !user.codigoReset ||
-    user.codigoReset !== codigo ||
-    !user.codigoResetExpira ||
-    user.codigoResetExpira < new Date()
-  ) {
+  const codigoValido =
+    !!user.codigoReset &&
+    !!user.codigoResetExpira &&
+    user.codigoResetExpira >= new Date() &&
+    (await bcrypt.compare(codigo, user.codigoReset))
+
+  if (!codigoValido) {
     throw Object.assign(new Error("Código inválido o expirado"), { status: 422 })
   }
 
@@ -132,11 +134,15 @@ export async function confirmarCambioPassword(userId: string, codigo: string, pa
 
 export async function solicitarRecuperacion(email: string) {
   const user = await User.findOne({ email: email.toLowerCase(), activo: true })
-  // Respuesta genérica para no revelar si el email existe
-  if (!user) return { mensaje: "Si el correo existe, recibirás un código en breve." }
+
+  if (!user) {
+    // Operación de tiempo constante para evitar timing attack (enumeración de usuarios)
+    await bcrypt.hash("dummy_timing_equalization", 10)
+    return { mensaje: "Si el correo existe, recibirás un código en breve." }
+  }
 
   const codigo = generarCodigo()
-  user.codigoReset = codigo
+  user.codigoReset = await bcrypt.hash(codigo, 10)
   user.codigoResetExpira = expiresIn15()
   await user.save()
 
@@ -155,12 +161,13 @@ export async function recuperarPassword(email: string, codigo: string, passwordN
   const user = await User.findOne({ email: email.toLowerCase(), activo: true }).select("+password")
   if (!user) throw Object.assign(new Error("Código inválido o expirado"), { status: 422 })
 
-  if (
-    !user.codigoReset ||
-    user.codigoReset !== codigo ||
-    !user.codigoResetExpira ||
-    user.codigoResetExpira < new Date()
-  ) {
+  const codigoValido =
+    !!user.codigoReset &&
+    !!user.codigoResetExpira &&
+    user.codigoResetExpira >= new Date() &&
+    (await bcrypt.compare(codigo, user.codigoReset))
+
+  if (!codigoValido) {
     throw Object.assign(new Error("Código inválido o expirado"), { status: 422 })
   }
 

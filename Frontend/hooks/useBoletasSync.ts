@@ -29,7 +29,7 @@ export function useBoletasSync(onRefresh: () => void) {
 
       ws.onopen = () => {
         if (destroyed) { ws?.close(); return }
-        console.log("[WS] Conectado al servidor")
+        if (process.env.NODE_ENV === "development") console.log("[WS] Conectado al servidor")
       }
 
       ws.onmessage = () => {
@@ -38,7 +38,7 @@ export function useBoletasSync(onRefresh: () => void) {
 
       ws.onclose = () => {
         if (!destroyed) {
-          console.log("[WS] Conexión cerrada, reconectando en 3s...")
+          if (process.env.NODE_ENV === "development") console.log("[WS] Conexión cerrada, reconectando en 3s...")
           reconnectTimer = setTimeout(connect, 3000)
         }
       }

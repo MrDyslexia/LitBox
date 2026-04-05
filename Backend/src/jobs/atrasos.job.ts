@@ -51,43 +51,51 @@ export async function runAtrasosJob() {
 
     const aviso = (boleta.conteoAvisosAtraso ?? 0) + 1
     const escalado = aviso === 3
-    const empleado = boleta.empleado as { nombre: string; email: string }
+    const empleado = boleta.empleado as unknown as { nombre: string; email: string }
+
+    const mailPromises: Promise<void>[] = []
 
     // Avisar a auditores
     for (const auditor of auditores) {
-      await sendMail({
-        to: auditor.email,
-        subject: `[LitBox] Recordatorio: boleta ${boleta.codigo} sin resolver (aviso ${aviso}/3)`,
-        html: tmplAtrasoAuditor({
-          auditorNombre: auditor.nombre,
-          codigo: boleta.codigo,
-          empleadoNombre: empleado.nombre,
-          diasHabiles: dias,
-          aviso,
-        }),
-      })
-    }
-
-    // Avisar a admins
-    for (const admin of admins) {
-      const notif = (admin as any).notificaciones
-      const debeNotificar = escalado || !notif || notif.atraso
-
-      if (debeNotificar) {
-        await sendMail({
-          to: admin.email,
-          subject: `[LitBox] ${escalado ? "ESCALADO" : "Atraso"}: boleta ${boleta.codigo} sin resolver`,
-          html: tmplAtrasoAdmin({
-            adminNombre: admin.nombre,
+      mailPromises.push(
+        sendMail({
+          to: auditor.email,
+          subject: `[LitBox] Recordatorio: boleta ${boleta.codigo} sin resolver (aviso ${aviso}/3)`,
+          html: tmplAtrasoAuditor({
+            auditorNombre: auditor.nombre,
             codigo: boleta.codigo,
             empleadoNombre: empleado.nombre,
             diasHabiles: dias,
             aviso,
-            escalado,
           }),
         })
+      )
+    }
+
+    // Avisar a admins
+    for (const admin of admins) {
+      const notif = admin.notificaciones
+      const debeNotificar = escalado || !notif || notif.atraso
+
+      if (debeNotificar) {
+        mailPromises.push(
+          sendMail({
+            to: admin.email,
+            subject: `[LitBox] ${escalado ? "ESCALADO" : "Atraso"}: boleta ${boleta.codigo} sin resolver`,
+            html: tmplAtrasoAdmin({
+              adminNombre: admin.nombre,
+              codigo: boleta.codigo,
+              empleadoNombre: empleado.nombre,
+              diasHabiles: dias,
+              aviso,
+              escalado,
+            }),
+          })
+        )
       }
     }
+
+    await Promise.allSettled(mailPromises)
 
     // Actualizar contadores en la boleta
     await Boleta.findByIdAndUpdate(boleta._id, {

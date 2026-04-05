@@ -11,6 +11,30 @@ import {
   completarPerfil,
 } from "../controllers/auth.controller"
 
+// ─── Rate limiter en memoria ──────────────────────────────────────────────────
+
+interface RateBucket { count: number; resetAt: number }
+const rateBuckets = new Map<string, RateBucket>()
+
+function checkRateLimit(key: string, maxRequests: number, windowMs: number) {
+  const now = Date.now()
+  const bucket = rateBuckets.get(key)
+
+  if (!bucket || now > bucket.resetAt) {
+    rateBuckets.set(key, { count: 1, resetAt: now + windowMs })
+    return
+  }
+
+  bucket.count++
+  if (bucket.count > maxRequests) {
+    throw Object.assign(new Error("Demasiados intentos. Intenta más tarde."), { status: 429 })
+  }
+}
+
+function getIp(request: Request): string {
+  return request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown"
+}
+
 const infoBancariaSchema = t.Object({
   banco:        t.String({ minLength: 1 }),
   tipoCuenta:   t.Union([t.Literal("corriente"), t.Literal("vista"), t.Literal("ahorro")]),
@@ -24,8 +48,9 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   .post(
     "/login",
     async ({ body, jwt, cookie, set, request }) => {
-      const ip = request.headers.get("x-forwarded-for") ?? undefined
-      const { token, user } = await login(body.email, body.password, jwt.sign, ip)
+      checkRateLimit(`login:${getIp(request)}`, 10, 15 * 60 * 1000)
+      const ip = getIp(request)
+      const { token, user } = await login(body.email, body.password, jwt.sign as (payload: object) => Promise<string>, ip)
       cookie.auth.set({
         value: token,
         httpOnly: true,
@@ -35,7 +60,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         path: "/",
       })
       set.status = 200
-      return { token, user }
+      return { user }
     },
     {
       body: t.Object({
@@ -62,7 +87,10 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   // POST /api/auth/solicitar-recuperacion
   .post(
     "/solicitar-recuperacion",
-    ({ body }) => solicitarRecuperacion(body.email),
+    ({ body, request }) => {
+      checkRateLimit(`recuperacion:${getIp(request)}`, 5, 15 * 60 * 1000)
+      return solicitarRecuperacion(body.email)
+    },
     {
       body: t.Object({ email: t.String({ format: "email" }) }),
       detail: { summary: "Solicitar código de recuperación de contraseña", tags: ["Auth"] },
@@ -72,7 +100,10 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   // POST /api/auth/recuperar-password
   .post(
     "/recuperar-password",
-    ({ body }) => recuperarPassword(body.email, body.codigo, body.passwordNueva),
+    ({ body, request }) => {
+      checkRateLimit(`recuperar:${getIp(request)}`, 10, 15 * 60 * 1000)
+      return recuperarPassword(body.email, body.codigo, body.passwordNueva)
+    },
     {
       body: t.Object({
         email:         t.String({ format: "email" }),

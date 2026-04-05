@@ -1,8 +1,15 @@
 import { randomBytes } from "crypto"
+import { Types } from "mongoose"
 import { User } from "../models/User"
 import { Boleta } from "../models/Boleta"
 import type { UsuarioFiltros, UserRole } from "../types"
 import { notificarBienvenida } from "../services/notificaciones.service"
+
+function validarObjectId(id: string) {
+  if (!Types.ObjectId.isValid(id)) {
+    throw Object.assign(new Error("ID inválido"), { status: 400 })
+  }
+}
 
 // ─── Generador de contraseña ──────────────────────────────────────────────────
 
@@ -56,6 +63,7 @@ export async function listarUsuarios(filtros: UsuarioFiltros) {
 // ─── Obtener usuario ──────────────────────────────────────────────────────────
 
 export async function obtenerUsuario(id: string) {
+  validarObjectId(id)
   const user = await User.findById(id).lean()
   if (!user) {
     throw Object.assign(new Error("Usuario no encontrado"), { status: 404 })
@@ -119,6 +127,7 @@ export async function actualizarUsuario(
     infoBancaria: { banco: string; tipoCuenta: string; numeroCuenta: string }
   }>
 ) {
+  validarObjectId(id)
   const user = await User.findById(id)
   if (!user) {
     throw Object.assign(new Error("Usuario no encontrado"), { status: 404 })
@@ -133,9 +142,18 @@ export async function actualizarUsuario(
 // ─── Toggle activo/inactivo ───────────────────────────────────────────────────
 
 export async function toggleEstado(id: string) {
+  validarObjectId(id)
   const user = await User.findById(id)
   if (!user) {
     throw Object.assign(new Error("Usuario no encontrado"), { status: 404 })
+  }
+
+  // Prevenir desactivar el último administrador activo
+  if (user.rol === "administrador" && user.activo) {
+    const otrosAdmins = await User.countDocuments({ rol: "administrador", activo: true, _id: { $ne: id } })
+    if (otrosAdmins === 0) {
+      throw Object.assign(new Error("No puedes desactivar el único administrador activo"), { status: 400 })
+    }
   }
 
   user.activo = !user.activo
@@ -147,10 +165,32 @@ export async function toggleEstado(id: string) {
 // ─── Eliminar usuario ─────────────────────────────────────────────────────────
 
 export async function eliminarUsuario(id: string) {
-  const user = await User.findByIdAndDelete(id)
+  validarObjectId(id)
+  const user = await User.findById(id)
   if (!user) {
     throw Object.assign(new Error("Usuario no encontrado"), { status: 404 })
   }
 
+  // Prevenir eliminar el último administrador activo
+  if (user.rol === "administrador") {
+    const otrosAdmins = await User.countDocuments({ rol: "administrador", activo: true, _id: { $ne: id } })
+    if (otrosAdmins === 0) {
+      throw Object.assign(new Error("No puedes eliminar el único administrador activo"), { status: 400 })
+    }
+  }
+
+  // Prevenir eliminar usuario con boletas activas
+  const tieneBoletas = await Boleta.exists({
+    empleado: id,
+    estado: { $in: ["pendiente", "en_revision", "aprobada"] },
+  })
+  if (tieneBoletas) {
+    throw Object.assign(
+      new Error("No se puede eliminar un usuario con boletas pendientes, en revisión o aprobadas"),
+      { status: 409 }
+    )
+  }
+
+  await User.findByIdAndDelete(id)
   return { mensaje: "Usuario eliminado correctamente" }
 }

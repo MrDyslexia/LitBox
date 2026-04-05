@@ -9,12 +9,33 @@ import { Label } from "@/components/ui/label"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
 import { auth } from "@/lib/api"
 import type { ApiUser } from "@/lib/types"
-import type { User } from "@/app/page"
+import { useUser } from "@/contexts/user-context"
+
+const BANCOS_CHILE = [
+  "Banco de Chile",
+  "Banco Santander Chile",
+  "Banco BCI",
+  "BancoEstado",
+  "Banco Itaú Chile",
+  "Banco BICE",
+  "Banco Security",
+  "Banco Scotiabank Chile",
+  "Banco Internacional",
+  "Banco Consorcio",
+  "Banco Ripley",
+  "Banco Falabella",
+  "HSBC Bank Chile",
+  "Banco BTG Pactual Chile",
+  "Coopeuch",
+  "Mercado Pago",
+  "Tenpo",
+  "MACH",
+  "Prepago Los Héroes",
+  "Tapp",
+]
 
 interface ConfiguracionPerfilProps {
-  user: User
   onBack: () => void
-  onUpdate: (updates: { name: string; email: string; avatar: string }) => void
   embedded?: boolean  // true = sin breadcrumb ni título propio (para embeber dentro de otra vista)
 }
 
@@ -36,9 +57,9 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 
 // ─── Mensaje de feedback inline ───────────────────────────────────────────────
 
-function FeedbackMsg({ msg }: { msg: string }) {
+function FeedbackMsg({ msg, type }: { msg: string; type?: "success" | "error" }) {
   if (!msg) return null
-  const isError = msg.toLowerCase().includes("error") || msg.toLowerCase().includes("incorrecta") || msg.toLowerCase().includes("uso")
+  const isError = type === "error" || (type === undefined && msg.startsWith("Error"))
   return (
     <p className="text-sm font-medium" style={{ color: isError ? "var(--destructive)" : "oklch(0.58 0.14 162)" }}>
       {msg}
@@ -48,7 +69,8 @@ function FeedbackMsg({ msg }: { msg: string }) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export default function ConfiguracionPerfil({ user, onBack, onUpdate, embedded = false }: ConfiguracionPerfilProps) {
+export default function ConfiguracionPerfil({ onBack, embedded = false }: ConfiguracionPerfilProps) {
+  const { user, onUpdate } = useUser()
   const [apiUser, setApiUser] = useState<ApiUser | null>(null)
 
   // ── Datos personales ──────────────────────────────────────────────────────
@@ -86,7 +108,14 @@ export default function ConfiguracionPerfil({ user, onBack, onUpdate, embedded =
       setBanco(u.infoBancaria?.banco ?? "")
       setTipoCuenta(u.infoBancaria?.tipoCuenta ?? "corriente")
       setNumeroCuenta(u.infoBancaria?.numeroCuenta ?? "")
-    }).catch(() => {})
+    }).catch((err) => {
+      const status = err?.status ?? err?.response?.status
+      if (status === 401) {
+        window.location.replace("/")
+      } else {
+        setMsgNombres("Error al cargar el perfil. Intenta recargar la página.")
+      }
+    })
   }, [])
 
   const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
@@ -177,6 +206,10 @@ export default function ConfiguracionPerfil({ user, onBack, onUpdate, embedded =
       setMsgBanco("Error: Completa todos los campos bancarios.")
       return
     }
+    if (!/^\d{6,20}$/.test(numeroCuenta.trim())) {
+      setMsgBanco("Error: El número de cuenta debe contener solo dígitos (6–20 caracteres).")
+      return
+    }
     setSavingBanco(true)
     try {
       const updated = await auth.actualizarPerfil({
@@ -256,7 +289,7 @@ export default function ConfiguracionPerfil({ user, onBack, onUpdate, embedded =
               <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-sm font-medium">Correo electrónico <span className="text-destructive">*</span></Label>
                 <Input
-                  type="text"
+                  type="email"
                   value={nombres.email}
                   onChange={(e) => setNombres({ ...nombres, email: e.target.value })}
                   className="h-10"
@@ -335,7 +368,7 @@ export default function ConfiguracionPerfil({ user, onBack, onUpdate, embedded =
                     placeholder="Mínimo 8 caracteres"
                     required
                   />
-                  <button type="button" onClick={() => setShowNueva(!showNueva)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <button type="button" aria-label={showNueva ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowNueva(!showNueva)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showNueva ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -359,7 +392,7 @@ export default function ConfiguracionPerfil({ user, onBack, onUpdate, embedded =
                     autoComplete="new-password"
                     required
                   />
-                  <button type="button" onClick={() => setShowConfirmar(!showConfirmar)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <button type="button" aria-label={showConfirmar ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowConfirmar(!showConfirmar)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {showConfirmar ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -388,7 +421,15 @@ export default function ConfiguracionPerfil({ user, onBack, onUpdate, embedded =
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">Banco</Label>
-              <Input placeholder="Ej: Banco de Chile" value={banco} onChange={(e) => setBanco(e.target.value)} className="h-10" />
+              <select
+                className="w-full h-10 px-3 rounded-lg border text-sm bg-background text-foreground"
+                style={{ borderColor: "var(--border)" }}
+                value={banco}
+                onChange={(e) => setBanco(e.target.value)}
+              >
+                <option value="">Seleccionar banco...</option>
+                {BANCOS_CHILE.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">Tipo de cuenta</Label>
@@ -396,7 +437,7 @@ export default function ConfiguracionPerfil({ user, onBack, onUpdate, embedded =
                 className="w-full h-10 px-3 rounded-lg border text-sm bg-background text-foreground"
                 style={{ borderColor: "var(--border)" }}
                 value={tipoCuenta}
-                onChange={(e) => setTipoCuenta(e.target.value as any)}
+                onChange={(e) => setTipoCuenta(e.target.value as "corriente" | "vista" | "ahorro")}
               >
                 <option value="corriente">Cuenta Corriente</option>
                 <option value="vista">Cuenta Vista</option>

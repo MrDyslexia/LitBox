@@ -39,7 +39,7 @@ export const boletaRoutes = new Elysia({ prefix: "/boletas" })
       listarBoletas(
         {
           page: query.page ? Number(query.page) : 1,
-          limit: query.limit ? Number(query.limit) : 20,
+          limit: query.limit ? Math.min(Number(query.limit), 100) : 20,
           estado: query.estado as any,
           tipo: query.tipo as any,
           empleadoId: query.empleadoId,
@@ -83,12 +83,12 @@ export const boletaRoutes = new Elysia({ prefix: "/boletas" })
       })
       .post(
         "/",
-        ({ body, authUser }) => crearBoleta(body as any, authUser),
+        ({ body, authUser }) => crearBoleta(body, authUser),
         {
           body: t.Object({
             tipo: tipoEnum,
             monto: t.Number({ minimum: 1 }),
-            fecha: t.String(),
+            fecha: t.String({ pattern: "^\\d{4}-\\d{2}-\\d{2}$" }),
             descripcion: t.String({ minLength: 10, maxLength: 1000 }),
             imagen: t.Optional(
               t.Object({

@@ -21,6 +21,7 @@ export interface Boleta {
   empleadoNombre: string
   empleadoEmail: string
   imageUrl: string
+  imageTipo?: string
   comentarioAuditor?: string
   fechaRevision?: string
   gestorNombre?: string
