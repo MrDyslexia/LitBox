@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { CalendarDays, Wallet } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,77 +11,66 @@ import { formatMonto, formatFecha, type Boleta } from "@/lib/mock-data"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
 import PayModal from "@/components/pay-modal"
+import Pagination from "@/components/pagination"
 
+const PAGE_SIZE = 20
 const GESTOR_COLOR = "oklch(0.52 0.18 290)"
 
 export default function GestorPorPagarPage() {
   const [boletas, setBoletas] = useState<Boleta[]>([])
-  const [loadingData, setLoadingData] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [payTarget, setPayTarget] = useState<Boleta | null>(null)
+  const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const mountedRef = useRef(true)
+  const [total, setTotal] = useState(0)
 
+  // Debounce search 400ms
   useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
+    const t = setTimeout(() => setDebouncedSearch(search), 400)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Reset page when search changes
+  useEffect(() => { setPage(1) }, [debouncedSearch])
 
   const loadData = useCallback(async () => {
-    setLoadingData(true)
+    setLoading(true)
     try {
-      const result = await boletasApi.list({ limit: "100" })
-      if (!mountedRef.current) return
-      
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: String(PAGE_SIZE),
+        estado: "aprobada",
+      }
+      if (debouncedSearch) params.buscar = debouncedSearch
+
+      const result = await boletasApi.list(params)
+
       if (result && Array.isArray(result.items)) {
         setBoletas(result.items.map(normalizeBoleta))
         setTotalPages(result.totalPages || 1)
+        setTotal(result.total || 0)
       }
     } catch (err) {
       console.error("Error cargando boletas:", err)
     } finally {
-      if (mountedRef.current) setLoadingData(false)
+      setLoading(false)
     }
-  }, [])
+  }, [page, debouncedSearch])
 
-  // Carga inicial estable
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  useEffect(() => { loadData() }, [loadData])
 
-  // Sincronización estable
   useBoletasSync(loadData)
-
-  // Memorizamos el filtrado para evitar procesar la lista en cada pequeño cambio de UI
-  const filteredPorPagar = useMemo(() => {
-    const searchTerm = search.toLowerCase().trim()
-    
-    return boletas.filter((b) => {
-      // Primero: Solo mostrar las aprobadas (por pagar)
-      if (b.estado !== "aprobada") return false
-      
-      // Segundo: Aplicar búsqueda si existe
-      if (!searchTerm) return true
-      
-      const matchName = (b.empleadoNombre?.toLowerCase() || "").includes(searchTerm)
-      const matchId = (b.id?.toLowerCase() || "").includes(searchTerm)
-      const matchTipo = (b.tipo?.toLowerCase() || "").includes(searchTerm)
-      
-      return matchName || matchId || matchTipo
-    })
-  }, [boletas, search])
 
   const handleConfirmPago = async (
     comprobante: { url: string; nombre: string; tipo: string; tamano: number }
   ) => {
     if (!payTarget?._id && !payTarget?.id) return
     const id = payTarget._id ?? payTarget.id
-    
+
     try {
       await boletasApi.pagar(id, comprobante)
-      // Recargar datos tras el pago
       await loadData()
     } catch (err) {
       console.error("Error al registrar pago:", err)
@@ -106,24 +95,27 @@ export default function GestorPorPagarPage() {
           </p>
         </div>
 
-        <div className="relative">
+        <div className="space-y-1">
           <Input
             placeholder="Buscar por empleado, tipo o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-10"
           />
+          {total > 0 && !loading && (
+            <p className="text-xs text-muted-foreground">{total} resultado(s)</p>
+          )}
         </div>
 
         <div className="space-y-3">
-          {loadingData && boletas.length === 0 ? (
+          {loading && boletas.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm">Cargando...</div>
-          ) : filteredPorPagar.length === 0 ? (
+          ) : boletas.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm border rounded-lg bg-muted/10">
               {search ? "No se encontraron resultados para tu búsqueda." : "No hay boletas pendientes de pago."}
             </div>
           ) : (
-            filteredPorPagar.map((boleta) => (
+            boletas.map((boleta) => (
               <Card key={boleta.id} className="border shadow-none hover:border-muted-foreground/20 transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
@@ -171,11 +163,7 @@ export default function GestorPorPagarPage() {
           )}
         </div>
 
-        {totalPages > 1 && (
-          <p className="text-xs text-muted-foreground text-center py-2">
-            Mostrando resultados de {totalPages} páginas disponibles.
-          </p>
-        )}
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {payTarget && (

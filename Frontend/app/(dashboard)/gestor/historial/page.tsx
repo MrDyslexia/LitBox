@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { CheckCircle, ImageIcon, ExternalLink } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,38 +10,49 @@ import { formatMonto, formatFecha, type Boleta } from "@/lib/mock-data"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
+import Pagination from "@/components/pagination"
+
+const PAGE_SIZE = 20
 
 export default function GestorHistorialPage() {
   const [boletas, setBoletas] = useState<Boleta[]>([])
   const [stats, setStats] = useState<ApiStats | null>(null)
-  const [loadingData, setLoadingData] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const mountedRef = useRef(true)
+  const [total, setTotal] = useState(0)
 
+  // Debounce search 400ms
   useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
+    const t = setTimeout(() => setDebouncedSearch(search), 400)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Reset page when search changes
+  useEffect(() => { setPage(1) }, [debouncedSearch])
 
   const loadData = useCallback(async () => {
-    // Solo activamos loading si no hay datos previos para evitar parpadeos molestos
-    if (boletas.length === 0) setLoadingData(true)
-    
+    setLoading(true)
     try {
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: String(PAGE_SIZE),
+        estado: "pagada",
+      }
+      if (debouncedSearch) params.buscar = debouncedSearch
+
       const [boletasResult, statsResult] = await Promise.allSettled([
-        boletasApi.list({ limit: "100" }),
+        boletasApi.list(params),
         boletasApi.stats(),
       ])
-
-      if (!mountedRef.current) return
 
       if (boletasResult.status === "fulfilled") {
         const items = boletasResult.value.items || []
         setBoletas(items.map(normalizeBoleta))
         setTotalPages(boletasResult.value.totalPages || 1)
+        setTotal(boletasResult.value.total || 0)
       }
 
       if (statsResult.status === "fulfilled") {
@@ -50,36 +61,13 @@ export default function GestorHistorialPage() {
     } catch (err) {
       console.error("Error crítico en carga de historial:", err)
     } finally {
-      if (mountedRef.current) setLoadingData(false)
+      setLoading(false)
     }
-  }, [boletas.length])
+  }, [page, debouncedSearch])
 
-  // Carga inicial
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  useEffect(() => { loadData() }, [loadData])
 
-  // Sincronización en tiempo real
   useBoletasSync(loadData)
-
-  // Filtrado optimizado y seguro
-  const filteredPagadas = useMemo(() => {
-    const searchTerm = search.toLowerCase().trim()
-    
-    return boletas.filter((b) => {
-      // 1. Solo las pagadas
-      if (b.estado !== "pagada") return false
-      
-      // 2. Filtro de búsqueda
-      if (!searchTerm) return true
-      
-      const nombre = b.empleadoNombre?.toLowerCase() || ""
-      const id = b.id?.toLowerCase() || ""
-      const tipo = b.tipo?.toLowerCase() || ""
-      
-      return nombre.includes(searchTerm) || id.includes(searchTerm) || tipo.includes(searchTerm)
-    })
-  }, [boletas, search])
 
   const montoPagado = stats?.montoPagado ?? 0
 
@@ -98,19 +86,22 @@ export default function GestorHistorialPage() {
         </p>
       </div>
 
-      <div className="relative">
+      <div className="space-y-1">
         <Input
           placeholder="Buscar por empleado, tipo o ID..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-10"
         />
+        {total > 0 && !loading && (
+          <p className="text-xs text-muted-foreground">{total} resultado(s)</p>
+        )}
       </div>
 
       {/* Card de Total Pagado con mejor contraste */}
       <div
         className="flex items-center justify-between px-4 py-4 rounded-xl border"
-        style={{ 
+        style={{
           background: "oklch(0.97 0.01 195)",
           borderColor: "oklch(0.90 0.02 195)"
         }}
@@ -129,14 +120,14 @@ export default function GestorHistorialPage() {
       </div>
 
       <div className="space-y-3">
-        {loadingData && boletas.length === 0 ? (
+        {loading && boletas.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">Cargando historial...</div>
-        ) : filteredPagadas.length === 0 ? (
+        ) : boletas.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm border rounded-lg bg-muted/5">
             {search ? "No se encontraron coincidencias." : "Aún no hay pagos registrados en el sistema."}
           </div>
         ) : (
-          filteredPagadas.map((boleta) => (
+          boletas.map((boleta) => (
             <Card key={boleta.id} className="border shadow-none overflow-hidden hover:border-muted-foreground/20 transition-all">
               <CardContent className="p-0">
                 <div className="p-4 space-y-3">
@@ -194,11 +185,7 @@ export default function GestorHistorialPage() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <p className="text-xs text-muted-foreground text-center py-4">
-          Mostrando resultados de {totalPages} páginas.
-        </p>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }

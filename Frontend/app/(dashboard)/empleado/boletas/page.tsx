@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Search, FileText, CalendarDays } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,67 +10,54 @@ import StatusBadge from "@/components/status-badge"
 import { formatMonto, formatFecha, type Boleta } from "@/lib/mock-data"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
+import Pagination from "@/components/pagination"
+
+const PAGE_SIZE = 20
 
 export default function EmpleadoBoletasPage() {
   const [boletas, setBoletas] = useState<Boleta[]>([])
-  const [loadingData, setLoadingData] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const mountedRef = useRef(true)
+  const [total, setTotal] = useState(0)
 
-  // 1. Control del ciclo de vida para evitar fugas de memoria
+  // Debounce search 400ms
   useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
+    const t = setTimeout(() => setDebouncedSearch(search), 400)
+    return () => clearTimeout(t)
+  }, [search])
 
-  // 2. Función de carga estabilizada con useCallback
+  // Reset page when search changes
+  useEffect(() => { setPage(1) }, [debouncedSearch])
+
   const loadData = useCallback(async () => {
-    setLoadingData(true)
+    setLoading(true)
     try {
-      const result = await boletasApi.list({ limit: "100" })
-      
-      if (!mountedRef.current) return
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: String(PAGE_SIZE),
+      }
+      if (debouncedSearch) params.buscar = debouncedSearch
+
+      const result = await boletasApi.list(params)
 
       if (result && Array.isArray(result.items)) {
         setBoletas(result.items.map(normalizeBoleta))
         setTotalPages(result.totalPages || 1)
+        setTotal(result.total || 0)
       }
     } catch (err) {
       console.error("Error cargando boletas:", err)
     } finally {
-      if (mountedRef.current) setLoadingData(false)
+      setLoading(false)
     }
-  }, [])
+  }, [page, debouncedSearch])
 
-  // 3. Solo una carga inicial controlada
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  useEffect(() => { loadData() }, [loadData])
 
-  // 4. Sincronización (el hook interno debe manejar la estabilidad de loadData)
   useBoletasSync(loadData)
-
-  // 5. Filtrado seguro y optimizado
-  const filtered = useMemo(() => {
-    const searchTerm = search.toLowerCase().trim()
-    
-    if (!searchTerm) return boletas
-
-    return boletas.filter((b) => {
-      const tipo = b.tipo?.toLowerCase() || ""
-      const id = b.id?.toLowerCase() || ""
-      const descripcion = b.descripcion?.toLowerCase() || ""
-      
-      return (
-        tipo.includes(searchTerm) ||
-        id.includes(searchTerm) ||
-        descripcion.includes(searchTerm)
-      )
-    })
-  }, [boletas, search])
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-5xl">
@@ -87,27 +74,32 @@ export default function EmpleadoBoletasPage() {
         </p>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por tipo, ID o descripción..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 h-10"
-        />
+      <div className="space-y-1">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por tipo, ID o descripción..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-10"
+          />
+        </div>
+        {total > 0 && !loading && (
+          <p className="text-xs text-muted-foreground">{total} resultado(s)</p>
+        )}
       </div>
 
       <div className="space-y-3">
-        {loadingData && boletas.length === 0 ? (
+        {loading && boletas.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
             Cargando tus boletas...
           </div>
-        ) : filtered.length === 0 ? (
+        ) : boletas.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
             No se encontraron boletas.
           </div>
         ) : (
-          filtered.map((boleta) => (
+          boletas.map((boleta) => (
             <Link
               key={boleta.id}
               href={`/empleado/boletas/${boleta._id ?? boleta.id}`}
@@ -150,11 +142,7 @@ export default function EmpleadoBoletasPage() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <p className="text-xs text-muted-foreground text-center py-2">
-          Mostrando los primeros 100 registros de {totalPages} páginas.
-        </p>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }

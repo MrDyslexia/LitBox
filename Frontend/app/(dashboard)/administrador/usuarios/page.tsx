@@ -10,6 +10,9 @@ import BreadcrumbNav from "@/components/breadcrumb-nav"
 import { usersApi } from "@/lib/api"
 import { formatRutInput, isValidRut } from "@/lib/rut"
 import type { ApiUser } from "@/lib/types"
+import Pagination from "@/components/pagination"
+
+const PAGE_SIZE = 20
 
 const BANCOS_CHILE = [
   "Banco de Chile",
@@ -80,6 +83,10 @@ export default function AdminUsuariosPage() {
   const [apiUsers, setApiUsers] = useState<ApiUser[]>([])
   const [loadingData, setLoadingData] = useState(true)
   const [searchUsers, setSearchUsers] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
   const [showNewUser, setShowNewUser] = useState(false)
   const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null)
   const [newUser, setNewUser] = useState<NewUserForm>({ ...DEFAULT_NEW_USER })
@@ -88,25 +95,36 @@ export default function AdminUsuariosPage() {
   const [savingUser, setSavingUser] = useState(false)
   const [userError, setUserError] = useState("")
 
+  // Debounce search 400ms
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchUsers), 400)
+    return () => clearTimeout(t)
+  }, [searchUsers])
+
+  // Reset page when search changes
+  useEffect(() => { setPage(1) }, [debouncedSearch])
+
   const loadData = useCallback(async () => {
     setLoadingData(true)
     try {
-      const result = await usersApi.list({ limit: "100" })
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: String(PAGE_SIZE),
+      }
+      if (debouncedSearch) params.buscar = debouncedSearch
+
+      const result = await usersApi.list(params)
       setApiUsers(result.items)
+      setTotalPages(result.totalPages || 1)
+      setTotal(result.total || 0)
     } catch (err) {
       console.error("Error cargando usuarios:", err)
     } finally {
       setLoadingData(false)
     }
-  }, [])
+  }, [page, debouncedSearch])
 
   useEffect(() => { loadData() }, [loadData])
-
-  const filteredUsers = apiUsers.filter(
-    (u) =>
-      u.nombre.toLowerCase().includes(searchUsers.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchUsers.toLowerCase())
-  )
 
   const validarEmail = (email: string): boolean => {
     const re = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
@@ -409,14 +427,19 @@ export default function AdminUsuariosPage() {
         </Card>
       )}
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar usuario por nombre o correo..."
-          value={searchUsers}
-          onChange={(e) => setSearchUsers(e.target.value)}
-          className="pl-9 h-10"
-        />
+      <div className="space-y-1">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar usuario por nombre o correo..."
+            value={searchUsers}
+            onChange={(e) => setSearchUsers(e.target.value)}
+            className="pl-9 h-10"
+          />
+        </div>
+        {total > 0 && !loadingData && (
+          <p className="text-xs text-muted-foreground">{total} resultado(s)</p>
+        )}
       </div>
 
       {/* Modal detalles de usuario */}
@@ -551,14 +574,14 @@ export default function AdminUsuariosPage() {
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">Cargando...</td>
                 </tr>
-              ) : filteredUsers.length === 0 ? (
+              ) : apiUsers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No se encontraron usuarios.
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => (
+                apiUsers.map((u) => (
                   <tr key={u._id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
@@ -620,6 +643,8 @@ export default function AdminUsuariosPage() {
           </table>
         </div>
       </Card>
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }

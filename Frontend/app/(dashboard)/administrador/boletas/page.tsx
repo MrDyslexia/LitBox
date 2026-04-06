@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Search } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,9 @@ import StatusBadge from "@/components/status-badge"
 import { formatMonto, formatFecha, type Boleta, type BoletaStatus } from "@/lib/mock-data"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
+import Pagination from "@/components/pagination"
+
+const PAGE_SIZE = 20
 
 const statusFilters: { value: BoletaStatus | "todas"; label: string }[] = [
   { value: "todas", label: "Todas" },
@@ -20,63 +23,50 @@ const statusFilters: { value: BoletaStatus | "todas"; label: string }[] = [
 
 export default function AdminBoletasPage() {
   const [boletas, setBoletas] = useState<Boleta[]>([])
-  const [loadingData, setLoadingData] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [searchBoletas, setSearchBoletas] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState<BoletaStatus | "todas">("todas")
+  const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const mountedRef = useRef(true)
+  const [total, setTotal] = useState(0)
 
-  // Manejo del ciclo de vida del componente
+  // Debounce search 400ms
   useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
+    const t = setTimeout(() => setDebouncedSearch(searchBoletas), 400)
+    return () => clearTimeout(t)
+  }, [searchBoletas])
+
+  // Reset page when search or filter changes
+  useEffect(() => { setPage(1) }, [debouncedSearch, filterStatus])
 
   const loadData = useCallback(async () => {
-    // Evitar múltiples estados de carga si ya hay datos (opcional para UX)
-    setLoadingData(true)
+    setLoading(true)
     try {
-      const result = await boletasApi.list({ limit: "100" })
-      
-      if (!mountedRef.current) return
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: String(PAGE_SIZE),
+      }
+      if (debouncedSearch) params.buscar = debouncedSearch
+      if (filterStatus !== "todas") params.estado = filterStatus
+
+      const result = await boletasApi.list(params)
 
       if (result && Array.isArray(result.items)) {
-        const normalized = result.items.map(normalizeBoleta)
-        setBoletas(normalized)
+        setBoletas(result.items.map(normalizeBoleta))
         setTotalPages(result.totalPages || 1)
+        setTotal(result.total || 0)
       }
     } catch (err) {
       console.error("Error cargando boletas:", err)
     } finally {
-      if (mountedRef.current) setLoadingData(false)
+      setLoading(false)
     }
-  }, [])
+  }, [page, debouncedSearch, filterStatus])
 
-  // Carga inicial
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  useEffect(() => { loadData() }, [loadData])
 
-  // Sincronización en tiempo real (si el hook lo requiere)
   useBoletasSync(loadData)
-
-  // Filtrado optimizado con useMemo y protección contra nulos
-  const filteredBoletas = useMemo(() => {
-    return boletas.filter((b) => {
-      const searchTerm = searchBoletas.toLowerCase()
-      
-      const matchSearch = 
-        (b.tipo?.toLowerCase() || "").includes(searchTerm) ||
-        (b.id?.toLowerCase() || "").includes(searchTerm) ||
-        (b.empleadoNombre?.toLowerCase() || "").includes(searchTerm)
-
-      const matchStatus = filterStatus === "todas" || b.estado === filterStatus
-      
-      return matchSearch && matchStatus
-    })
-  }, [boletas, searchBoletas, filterStatus])
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-6xl">
@@ -94,14 +84,19 @@ export default function AdminBoletasPage() {
       </div>
 
       <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por empleado, tipo o ID..."
-            value={searchBoletas}
-            onChange={(e) => setSearchBoletas(e.target.value)}
-            className="pl-9 h-10"
-          />
+        <div className="space-y-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por empleado, tipo o ID..."
+              value={searchBoletas}
+              onChange={(e) => setSearchBoletas(e.target.value)}
+              className="pl-9 h-10"
+            />
+          </div>
+          {total > 0 && !loading && (
+            <p className="text-xs text-muted-foreground">{total} resultado(s)</p>
+          )}
         </div>
         <div className="overflow-x-auto pb-1">
           <div className="flex items-center gap-1 p-1 rounded-lg border w-max" style={{ borderColor: "var(--border)" }}>
@@ -137,20 +132,20 @@ export default function AdminBoletasPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {loadingData && boletas.length === 0 ? (
+              {loading && boletas.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     Cargando boletas...
                   </td>
                 </tr>
-              ) : filteredBoletas.length === 0 ? (
+              ) : boletas.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No se encontraron boletas.
                   </td>
                 </tr>
               ) : (
-                filteredBoletas.map((b) => (
+                boletas.map((b) => (
                   <tr key={b.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground hidden sm:table-cell">
                       {b.id}
@@ -175,11 +170,7 @@ export default function AdminBoletasPage() {
         </div>
       </Card>
 
-      {totalPages > 1 && (
-        <p className="text-xs text-muted-foreground text-center py-2">
-          Mostrando resultados de {totalPages} páginas disponibles.
-        </p>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }

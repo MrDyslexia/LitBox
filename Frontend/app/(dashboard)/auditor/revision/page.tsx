@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Search, Filter, CalendarDays } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,6 +10,9 @@ import StatusBadge from "@/components/status-badge"
 import { formatMonto, formatFecha, type Boleta, type BoletaStatus } from "@/lib/mock-data"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
+import Pagination from "@/components/pagination"
+
+const PAGE_SIZE = 20
 
 const statusFilters: { value: BoletaStatus | "todas"; label: string }[] = [
   { value: "todas", label: "Todas" },
@@ -21,72 +24,50 @@ const statusFilters: { value: BoletaStatus | "todas"; label: string }[] = [
 
 export default function AuditorRevisionPage() {
   const [boletas, setBoletas] = useState<Boleta[]>([])
-  const [loadingData, setLoadingData] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState<BoletaStatus | "todas">("todas")
+  const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const mountedRef = useRef(true)
+  const [total, setTotal] = useState(0)
 
-  // 1. Control de montaje para evitar actualizaciones en componentes desmontados
+  // Debounce search 400ms
   useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
+    const t = setTimeout(() => setDebouncedSearch(search), 400)
+    return () => clearTimeout(t)
+  }, [search])
 
-  // 2. Función de carga estabilizada
+  // Reset page when search or filter changes
+  useEffect(() => { setPage(1) }, [debouncedSearch, filterStatus])
+
   const loadData = useCallback(async () => {
-    // Si ya tenemos datos, no mostramos el loader de pantalla completa para evitar parpadeos
-    if (boletas.length === 0) setLoadingData(true)
-    
+    setLoading(true)
     try {
-      const result = await boletasApi.list({ limit: "100" })
-      
-      if (!mountedRef.current) return
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: String(PAGE_SIZE),
+      }
+      if (debouncedSearch) params.buscar = debouncedSearch
+      if (filterStatus !== "todas") params.estado = filterStatus
+
+      const result = await boletasApi.list(params)
 
       if (result && Array.isArray(result.items)) {
         setBoletas(result.items.map(normalizeBoleta))
         setTotalPages(result.totalPages || 1)
+        setTotal(result.total || 0)
       }
     } catch (err) {
       console.error("Error cargando boletas para auditoría:", err)
     } finally {
-      if (mountedRef.current) setLoadingData(false)
+      setLoading(false)
     }
-  }, [boletas.length])
+  }, [page, debouncedSearch, filterStatus])
 
-  // 3. Efecto de carga inicial
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  useEffect(() => { loadData() }, [loadData])
 
-  // 4. Sincronización en tiempo real
   useBoletasSync(loadData)
-
-  // 5. Filtrado memorizado (Búsqueda + Estado)
-  const filtered = useMemo(() => {
-    const searchTerm = search.toLowerCase().trim()
-
-    return boletas.filter((b) => {
-      // Filtro de Estado
-      const matchStatus = filterStatus === "todas" || b.estado === filterStatus
-      if (!matchStatus) return false
-
-      // Filtro de Búsqueda (si existe texto)
-      if (!searchTerm) return true
-
-      const tipo = b.tipo?.toLowerCase() || ""
-      const id = b.id?.toLowerCase() || ""
-      const nombre = b.empleadoNombre?.toLowerCase() || ""
-
-      return (
-        tipo.includes(searchTerm) ||
-        id.includes(searchTerm) ||
-        nombre.includes(searchTerm)
-      )
-    })
-  }, [boletas, search, filterStatus])
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-5xl">
@@ -104,14 +85,19 @@ export default function AuditorRevisionPage() {
       </div>
 
       <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por empleado, tipo o ID..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-10"
-          />
+        <div className="space-y-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por empleado, tipo o ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-10"
+            />
+          </div>
+          {total > 0 && !loading && (
+            <p className="text-xs text-muted-foreground">{total} resultado(s)</p>
+          )}
         </div>
         <div className="overflow-x-auto pb-1">
           <div className="flex items-center gap-1 p-1 rounded-lg border w-max" style={{ borderColor: "var(--border)" }}>
@@ -135,16 +121,16 @@ export default function AuditorRevisionPage() {
       </div>
 
       <div className="space-y-3">
-        {loadingData && boletas.length === 0 ? (
+        {loading && boletas.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
             Cargando solicitudes...
           </div>
-        ) : filtered.length === 0 ? (
+        ) : boletas.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm border rounded-xl bg-muted/5">
             No se encontraron boletas con los filtros aplicados.
           </div>
         ) : (
-          filtered.map((boleta) => (
+          boletas.map((boleta) => (
             <Link
               key={boleta.id}
               href={`/auditor/revision/${boleta._id ?? boleta.id}`}
@@ -185,11 +171,7 @@ export default function AuditorRevisionPage() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <p className="text-xs text-muted-foreground text-center py-4">
-          Mostrando los registros de la página actual ({totalPages} disponibles).
-        </p>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }
