@@ -34,6 +34,10 @@ export const env = {
     dir: process.env.UPLOAD_DIR ?? "./uploads",
     maxSize: Number(process.env.MAX_FILE_SIZE ?? 5_242_880),
     allowedTypes: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
+    compression: {
+      quality:  Number(process.env.IMAGE_QUALITY   ?? 80),   // 1-100
+      maxWidth: Number(process.env.IMAGE_MAX_WIDTH  ?? 2000), // px
+    },
   },
   smtp: {
     host: process.env.SMTP_HOST ?? "",

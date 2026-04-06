@@ -4,10 +4,8 @@ import { use, useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
   FileText,
-  ClipboardList,
   CheckCircle,
   XCircle,
-  Clock,
   MessageSquare,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -32,7 +30,16 @@ export default function AuditorRevisionDetailPage({ params }: { params: Promise<
   const loadData = useCallback(async () => {
     try {
       const raw = await boletasApi.getById(id)
-      setBoleta(normalizeBoleta(raw))
+      const boleta = normalizeBoleta(raw)
+
+      // Al abrir la boleta, tomarla automáticamente si está pendiente
+      if (boleta.estado === "pendiente" && boleta._id) {
+        await boletasApi.revisar(boleta._id)
+        const updated = await boletasApi.getById(id)
+        setBoleta(normalizeBoleta(updated))
+      } else {
+        setBoleta(boleta)
+      }
     } catch (err) {
       console.error("Error cargando boleta:", err)
       setNotFound(true)
@@ -172,44 +179,6 @@ export default function AuditorRevisionDetailPage({ params }: { params: Promise<
         </CardContent>
       </Card>
 
-      {/* Tomar boleta (pendiente → en_revision) */}
-      {boleta.estado === "pendiente" && (
-        <Card className="border shadow-none">
-          <CardContent className="p-4 sm:p-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" style={{ color: "var(--accent)" }} />
-              <h3 className="text-sm font-semibold text-foreground">Tomar para revisión</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Al tomar esta boleta iniciarás formalmente su revisión. Luego podrás aprobarla o rechazarla.
-            </p>
-            {resolveError && (
-              <p className="text-sm text-destructive">{resolveError}</p>
-            )}
-            <Button
-              className="w-full h-11 font-semibold text-white"
-              style={{ background: "oklch(0.62 0.14 72)" }}
-              onClick={async () => {
-                if (!boleta._id) return
-                setResolving(true)
-                setResolveError("")
-                try {
-                  await boletasApi.revisar(boleta._id)
-                  await loadData()
-                } catch (err) {
-                  setResolveError(err instanceof Error ? err.message : "Error al tomar la boleta")
-                } finally {
-                  setResolving(false)
-                }
-              }}
-              disabled={resolving}
-            >
-              <ClipboardList className="w-4 h-4 mr-2" />
-              {resolving ? "Procesando..." : "Tomar boleta"}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Aprobar/Rechazar (en_revision) */}
       {boleta.estado === "en_revision" && (
