@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { LayoutDashboard, Wallet, History, Settings, FileText, Menu } from "lucide-react"
+import { LayoutDashboard, Wallet, History, Settings, FileText, Menu, BarChart3 } from "lucide-react"
 import AppSidebar from "@/components/app-sidebar"
 
 const GESTOR_COLOR = "oklch(0.52 0.18 290)"
@@ -10,6 +10,7 @@ const navItems = [
   { icon: <LayoutDashboard className="w-4 h-4" />, label: "Resumen", href: "/gestor" },
   { icon: <Wallet className="w-4 h-4" />, label: "Por pagar", href: "/gestor/por-pagar" },
   { icon: <History className="w-4 h-4" />, label: "Historial de pagos", href: "/gestor/historial" },
+  { icon: <BarChart3 className="w-4 h-4" />, label: "Estadísticas", href: "/gestor/estadisticas" },
   { icon: <Settings className="w-4 h-4" />, label: "Mi perfil", href: "/gestor/configuracion" },
 ]
 

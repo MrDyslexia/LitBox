@@ -71,6 +71,10 @@ export interface ApiStats {
   resueltasMes: number
   aprobadasMes: number
   rechazadasMes: number
+  pagadasMes: number
+  montoPagadoMes: number
+  boletasAtrasadas: number
+  tiempoEndToEnd: number | null
 }
 
 export interface ApiPaginated<T> {

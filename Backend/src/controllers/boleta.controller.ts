@@ -261,6 +261,7 @@ export async function estadisticas(authUser: AuthUser) {
 
   const now = new Date()
   const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1)
+  const haceTresDias = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
 
   // Match para estadísticas personales del auditor (null = omitir aggregation)
   const matchAuditor =
@@ -276,6 +277,9 @@ export async function estadisticas(authUser: AuthUser) {
     tiempoResolucion,
     boletasMesAgg,
     resueltasAgg,
+    pagadasMesAgg,
+    atrasadasAgg,
+    endToEndAgg,
   ] = await Promise.all([
     Boleta.aggregate<{ _id: string; total: number }>([
       { $match: matchBase },
@@ -319,6 +323,29 @@ export async function estadisticas(authUser: AuthUser) {
           { $group: { _id: "$estado", total: { $sum: 1 } } },
         ])
       : Promise.resolve([] as { _id: string; total: number }[]),
+
+    // Pagadas este mes (by fechaPago, not fechaCreacion)
+    Boleta.aggregate<{ total: number; monto: number }>([
+      { $match: { ...matchBase, estado: "pagada", fechaPago: { $exists: true, $gte: inicioMes } } },
+      { $group: { _id: null, total: { $sum: 1 }, monto: { $sum: "$monto" } } },
+    ]),
+
+    // Boletas atrasadas (pendiente o en_revision creadas hace >3 días) — always global
+    Boleta.aggregate<{ total: number }>([
+      { $match: { estado: { $in: ["pendiente", "en_revision"] }, fechaCreacion: { $lt: haceTresDias } } },
+      { $group: { _id: null, total: { $sum: 1 } } },
+    ]),
+
+    // Tiempo promedio end-to-end (fechaCreacion → fechaPago), only for estado=pagada
+    Boleta.aggregate<{ promedio: number }>([
+      { $match: { ...matchBase, estado: "pagada", fechaPago: { $exists: true } } },
+      {
+        $project: {
+          dias: { $divide: [{ $subtract: ["$fechaPago", "$fechaCreacion"] }, 86400000] },
+        },
+      },
+      { $group: { _id: null, promedio: { $avg: "$dias" } } },
+    ]),
   ])
 
   const stats: Record<string, number> = {
@@ -345,5 +372,9 @@ export async function estadisticas(authUser: AuthUser) {
     resueltasMes: (resueltasMap["aprobada"] ?? 0) + (resueltasMap["rechazada"] ?? 0),
     aprobadasMes: resueltasMap["aprobada"] ?? 0,
     rechazadasMes: resueltasMap["rechazada"] ?? 0,
+    pagadasMes: pagadasMesAgg[0]?.total ?? 0,
+    montoPagadoMes: pagadasMesAgg[0]?.monto ?? 0,
+    boletasAtrasadas: atrasadasAgg[0]?.total ?? 0,
+    tiempoEndToEnd: endToEndAgg[0]?.promedio ?? null,
   }
 }

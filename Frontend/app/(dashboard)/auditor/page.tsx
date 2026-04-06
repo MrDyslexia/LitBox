@@ -10,6 +10,7 @@ import { formatMonto, formatFecha, type Boleta } from "@/lib/mock-data"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
+import AuditorStatsPanel from "@/components/auditor-stats-panel"
 
 export default function AuditorHomePage() {
   const [boletas, setBoletas] = useState<Boleta[]>([])
@@ -60,7 +61,8 @@ export default function AuditorHomePage() {
     : null
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl">
+    <div className="flex min-h-full">
+      <div className="flex-1 min-w-0 p-4 sm:p-6 space-y-4 sm:space-y-6">
       <BreadcrumbNav items={[{ label: "Resumen" }]} />
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">Panel de auditoría</h1>
@@ -72,81 +74,105 @@ export default function AuditorHomePage() {
       {/* Global counts row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         {[
-          { label: "Por revisar", value: displayStats.pendientes, icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.62 0.14 72)", bg: "oklch(0.97 0.03 72)" },
-          { label: "Aprobadas", value: displayStats.aprobadas, icon: <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.58 0.14 162)", bg: "oklch(0.95 0.04 162)" },
-          { label: "Rechazadas", value: displayStats.rechazadas, icon: <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.55 0.22 27)", bg: "oklch(0.97 0.02 27)" },
+          {
+            label: "Por revisar",
+            value: displayStats.pendientes,
+            icon: Clock,
+            accentColor: "oklch(0.55 0.14 72)",
+            accentBg: "oklch(0.97 0.03 72)",
+          },
+          {
+            label: "Aprobadas",
+            value: displayStats.aprobadas,
+            icon: CheckCircle,
+            accentColor: "oklch(0.58 0.14 162)",
+            accentBg: "oklch(0.95 0.04 162)",
+          },
+          {
+            label: "Rechazadas",
+            value: displayStats.rechazadas,
+            icon: XCircle,
+            accentColor: "oklch(0.55 0.22 27)",
+            accentBg: "oklch(0.97 0.02 27)",
+          },
         ].map((stat) => (
-          <Card key={stat.label} className="border shadow-none">
-            <CardContent className="p-3 sm:p-5">
+          <div
+            key={stat.label}
+            className="rounded-2xl p-4 sm:p-5"
+            style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
+          >
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <p className="text-xs font-semibold text-muted-foreground">{stat.label}</p>
               <div
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mb-2 sm:mb-3"
-                style={{ background: stat.bg }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: stat.accentBg }}
               >
-                <span style={{ color: stat.color }}>{stat.icon}</span>
+                <stat.icon className="w-4 h-4" style={{ color: stat.accentColor }} />
               </div>
-              <p className="text-2xl sm:text-3xl font-bold text-foreground">
-                {loadingData ? "—" : stat.value}
-              </p>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">{stat.label}</p>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+              {loadingData ? "—" : stat.value}
+            </p>
+          </div>
         ))}
       </div>
 
       {/* Tasa de aprobacion + tiempo promedio */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {/* Tasa de aprobacion */}
-        <Card className="border shadow-none">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-sm font-medium text-muted-foreground">Tasa de aprobación</p>
-              <CheckCircle className="w-4 h-4" style={{ color: "oklch(0.58 0.14 162)" }} />
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-              {loadingData ? "—" : tasaMes != null ? `${tasaMes}%` : "—"}
-            </p>
-            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: loadingData || tasaMes == null ? "0%" : `${tasaMes}%`,
-                  background: "var(--primary)",
-                }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1.5">
-              {loadingData
-                ? ""
-                : resueltasMes === 0
-                ? "Sin actividad este mes"
-                : "De las boletas resueltas este mes por ti"}
-            </p>
-          </CardContent>
-        </Card>
+        <div
+          className="rounded-2xl p-4 sm:p-5"
+          style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
+        >
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-semibold text-muted-foreground">Tasa de aprobación</p>
+            <CheckCircle className="w-4 h-4" style={{ color: "oklch(0.58 0.14 162)" }} />
+          </div>
+          <p className="text-2xl sm:text-3xl font-black text-foreground tracking-tight mb-2">
+            {loadingData ? "—" : tasaMes != null ? `${tasaMes}%` : "—"}
+          </p>
+          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: loadingData || tasaMes == null ? "0%" : `${tasaMes}%`,
+                background: "var(--primary)",
+              }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {loadingData
+              ? ""
+              : resueltasMes === 0
+              ? "Sin actividad este mes"
+              : "De las boletas resueltas este mes por ti"}
+          </p>
+        </div>
 
         {/* Tiempo promedio */}
-        <Card className="border shadow-none">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-sm font-medium text-muted-foreground">Tiempo promedio de resolución</p>
-              <Timer className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-foreground">
-              {loadingData
-                ? "—"
-                : stats?.tiempoPromedioResolucion != null
-                ? `${stats.tiempoPromedioResolucion.toFixed(1)} días`
-                : "—"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1.5">
-              {loadingData
-                ? ""
-                : stats?.tiempoPromedioResolucion != null
-                ? "Promedio de días desde la creación"
-                : "Sin datos suficientes"}
-            </p>
-          </CardContent>
-        </Card>
+        <div
+          className="rounded-2xl p-4 sm:p-5"
+          style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
+        >
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-semibold text-muted-foreground">Tiempo promedio de resolución</p>
+            <Timer className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <p className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            {loadingData
+              ? "—"
+              : stats?.tiempoPromedioResolucion != null
+              ? `${stats.tiempoPromedioResolucion.toFixed(1)} días`
+              : "—"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {loadingData
+              ? ""
+              : stats?.tiempoPromedioResolucion != null
+              ? "Promedio de días desde la creación"
+              : "Sin datos suficientes"}
+          </p>
+        </div>
       </div>
 
       {/* Personal stats this month */}
@@ -155,41 +181,43 @@ export default function AuditorHomePage() {
           {
             label: "Resueltas este mes",
             value: resueltasMes,
-            icon: <CalendarDays className="w-4 h-4" />,
-            color: "var(--primary)",
-            bg: "oklch(0.94 0.03 240)",
+            icon: CalendarDays,
+            accentColor: "var(--primary)",
+            accentBg: "oklch(0.94 0.03 240)",
           },
           {
             label: "Aprobadas este mes",
             value: aprobadasMes,
-            icon: <CheckCircle className="w-4 h-4" />,
-            color: "oklch(0.58 0.14 162)",
-            bg: "oklch(0.95 0.04 162)",
+            icon: CheckCircle,
+            accentColor: "oklch(0.58 0.14 162)",
+            accentBg: "oklch(0.95 0.04 162)",
           },
           {
             label: "Rechazadas este mes",
             value: rechazadasMes,
-            icon: <XCircle className="w-4 h-4" />,
-            color: "oklch(0.55 0.22 27)",
-            bg: "oklch(0.97 0.02 27)",
+            icon: XCircle,
+            accentColor: "oklch(0.55 0.22 27)",
+            accentBg: "oklch(0.97 0.02 27)",
           },
         ].map((stat) => (
-          <Card key={stat.label} className="border shadow-none" style={{ background: "var(--muted)/30" }}>
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground leading-tight">{stat.label}</span>
-                <div
-                  className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-                  style={{ background: stat.bg }}
-                >
-                  <span style={{ color: stat.color }}>{stat.icon}</span>
-                </div>
+          <div
+            key={stat.label}
+            className="rounded-2xl p-3 sm:p-4"
+            style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
+          >
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <p className="text-xs font-semibold text-muted-foreground leading-tight">{stat.label}</p>
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: stat.accentBg }}
+              >
+                <stat.icon className="w-3.5 h-3.5" style={{ color: stat.accentColor }} />
               </div>
-              <p className="text-xl font-bold text-foreground">
-                {loadingData ? "—" : stat.value}
-              </p>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
+              {loadingData ? "—" : stat.value}
+            </p>
+          </div>
         ))}
       </div>
 
@@ -239,6 +267,8 @@ export default function AuditorHomePage() {
       {loadingData && (
         <div className="text-center py-8 text-sm text-muted-foreground">Cargando datos...</div>
       )}
+      </div>
+      <AuditorStatsPanel stats={stats} loading={loadingData} />
     </div>
   )
 }

@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { LayoutDashboard, ClipboardList, Settings, FileText, Menu } from "lucide-react"
+import { LayoutDashboard, ClipboardList, Settings, FileText, Menu, BarChart3 } from "lucide-react"
 import AppSidebar from "@/components/app-sidebar"
 
 const navItems = [
   { icon: <LayoutDashboard className="w-4 h-4" />, label: "Resumen", href: "/auditor" },
   { icon: <ClipboardList className="w-4 h-4" />, label: "Revisar boletas", href: "/auditor/revision" },
+  { icon: <BarChart3 className="w-4 h-4" />, label: "Estadísticas", href: "/auditor/estadisticas" },
   { icon: <Settings className="w-4 h-4" />, label: "Mi perfil", href: "/auditor/configuracion" },
 ]
 

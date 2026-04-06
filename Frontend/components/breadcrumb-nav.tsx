@@ -2,13 +2,13 @@ import Link from "next/link"
 import { ChevronRight, Home } from "lucide-react"
 
 interface BreadcrumbItem {
-  label: string
-  onClick?: () => void
-  href?: string
+  readonly label: string
+  readonly onClick?: () => void
+  readonly href?: string
 }
 
 interface BreadcrumbNavProps {
-  items: BreadcrumbItem[]
+  readonly items: readonly BreadcrumbItem[]
 }
 
 export default function BreadcrumbNav({ items }: BreadcrumbNavProps) {
@@ -22,7 +22,7 @@ export default function BreadcrumbNav({ items }: BreadcrumbNavProps) {
           <span key={item.label} className="flex items-center gap-1">
             {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
             {isLast ? (
-              <span className="font-semibold text-foreground flex items-center gap-1 truncate max-w-[120px] sm:max-w-[180px]">
+              <span className="font-semibold text-foreground flex items-center gap-1 truncate max-w-30 sm:max-w-45">
                 {isFirst && <Home className="w-3.5 h-3.5 shrink-0" />}
                 {item.label}
               </span>

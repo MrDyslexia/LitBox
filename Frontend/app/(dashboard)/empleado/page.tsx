@@ -20,6 +20,7 @@ import { boletasApi, normalizeBoleta } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
 import { useUser } from "@/contexts/user-context"
+import EmpleadoStatsPanel from "@/components/empleado-stats-panel"
 
 export default function EmpleadoHomePage() {
   const router = useRouter()
@@ -64,8 +65,11 @@ export default function EmpleadoHomePage() {
     totalAprobado: stats?.montoAprobado ?? 0,
   }
 
+  const montoPendienteCobro = Math.max(0, (stats?.montoAprobado ?? 0) - (stats?.montoPagado ?? 0))
+
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl">
+    <div className="flex min-h-full">
+      <div className="flex-1 min-w-0 p-4 sm:p-6 space-y-4 sm:space-y-6">
       <BreadcrumbNav items={[{ label: "Inicio" }]} />
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -90,37 +94,69 @@ export default function EmpleadoHomePage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { label: "Total enviadas", value: displayStats.total, icon: <FileText className="w-4 h-4 sm:w-5 sm:h-5" />, color: "var(--primary)" },
-          { label: "Pendientes", value: displayStats.pendientes, icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.62 0.14 72)" },
-          { label: "Aprobadas", value: displayStats.aprobadas, icon: <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.58 0.14 162)" },
-          { label: "Rechazadas", value: displayStats.rechazadas, icon: <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.55 0.22 27)" },
+          {
+            label: "Total enviadas",
+            value: displayStats.total,
+            icon: FileText,
+            accentColor: "var(--primary)",
+            accentBg: "oklch(0.94 0.03 240)",
+          },
+          {
+            label: "Pendientes",
+            value: displayStats.pendientes,
+            icon: Clock,
+            accentColor: "oklch(0.55 0.14 72)",
+            accentBg: "oklch(0.97 0.03 72)",
+          },
+          {
+            label: "Aprobadas",
+            value: displayStats.aprobadas,
+            icon: CheckCircle,
+            accentColor: "oklch(0.58 0.14 162)",
+            accentBg: "oklch(0.95 0.04 162)",
+          },
+          {
+            label: "Rechazadas",
+            value: displayStats.rechazadas,
+            icon: XCircle,
+            accentColor: "oklch(0.55 0.22 27)",
+            accentBg: "oklch(0.97 0.02 27)",
+          },
         ].map((stat) => (
-          <Card key={stat.label} className="border shadow-none">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground leading-tight">{stat.label}</span>
-                <span style={{ color: stat.color }}>{stat.icon}</span>
+          <div
+            key={stat.label}
+            className="rounded-2xl p-4 sm:p-5"
+            style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
+          >
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <p className="text-xs font-semibold text-muted-foreground">{stat.label}</p>
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: stat.accentBg }}
+              >
+                <stat.icon className="w-4 h-4" style={{ color: stat.accentColor }} />
               </div>
-              <p className="text-xl sm:text-2xl font-bold text-foreground">
-                {loadingData ? "—" : stat.value}
-              </p>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+              {loadingData ? "—" : stat.value}
+            </p>
+          </div>
         ))}
       </div>
 
       {/* Total reembolsado */}
-      <Card className="border shadow-none" style={{ background: "var(--primary)" }}>
-        <CardContent className="p-4 sm:p-5 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-white/70">Total aprobado para reembolso</p>
-            <p className="text-2xl sm:text-3xl font-bold text-white mt-1">
-              {loadingData ? "—" : formatMonto(displayStats.totalAprobado)}
-            </p>
-          </div>
-          <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-white/30" />
-        </CardContent>
-      </Card>
+      <div
+        className="rounded-2xl p-4 sm:p-5 flex items-center justify-between"
+        style={{ background: "var(--primary)" }}
+      >
+        <div>
+          <p className="text-sm font-medium text-white/70">Total aprobado para reembolso</p>
+          <p className="text-3xl sm:text-4xl font-black text-white mt-1 tracking-tight">
+            {loadingData ? "—" : formatMonto(displayStats.totalAprobado)}
+          </p>
+        </div>
+        <CheckCircle className="w-12 h-12 text-white/20 shrink-0" />
+      </div>
 
       {/* Recent */}
       <Card className="border shadow-none">
@@ -172,6 +208,12 @@ export default function EmpleadoHomePage() {
           )}
         </CardContent>
       </Card>
+      </div>
+      <EmpleadoStatsPanel
+        stats={stats}
+        loading={loadingData}
+        montoPendienteCobro={montoPendienteCobro}
+      />
     </div>
   )
 }
