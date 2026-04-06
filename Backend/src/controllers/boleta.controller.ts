@@ -259,19 +259,66 @@ export async function estadisticas(authUser: AuthUser) {
       ? { empleado: new Types.ObjectId(authUser._id) }
       : {}
 
-  const [conteos, montosAprobado, montosPagado] = await Promise.all([
-    Boleta.aggregate([
+  const now = new Date()
+  const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  // Match para estadísticas personales del auditor (null = omitir aggregation)
+  const matchAuditor =
+    authUser.rol === "auditor"
+      ? { auditor: new Types.ObjectId(authUser._id), fechaRevision: { $gte: inicioMes } }
+      : null
+
+  const [
+    conteos,
+    montosAprobado,
+    montosPagado,
+    porTipo,
+    tiempoResolucion,
+    boletasMesAgg,
+    resueltasAgg,
+  ] = await Promise.all([
+    Boleta.aggregate<{ _id: string; total: number }>([
       { $match: matchBase },
       { $group: { _id: "$estado", total: { $sum: 1 } } },
     ]),
-    Boleta.aggregate([
+    Boleta.aggregate<{ _id: null; totalMonto: number }>([
       { $match: { ...matchBase, estado: "aprobada" } },
       { $group: { _id: null, totalMonto: { $sum: "$monto" } } },
     ]),
-    Boleta.aggregate([
+    Boleta.aggregate<{ _id: null; totalMonto: number }>([
       { $match: { ...matchBase, estado: "pagada" } },
       { $group: { _id: null, totalMonto: { $sum: "$monto" } } },
     ]),
+    Boleta.aggregate<{ _id: string; total: number }>([
+      { $match: matchBase },
+      { $group: { _id: "$tipo", total: { $sum: 1 } } },
+      { $sort: { total: -1 } },
+    ]),
+    Boleta.aggregate<{ _id: null; promedio: number }>([
+      {
+        $match: {
+          ...matchBase,
+          fechaRevision: { $exists: true },
+          fechaCreacion: { $exists: true },
+        },
+      },
+      {
+        $project: {
+          dias: { $divide: [{ $subtract: ["$fechaRevision", "$fechaCreacion"] }, 86400000] },
+        },
+      },
+      { $group: { _id: null, promedio: { $avg: "$dias" } } },
+    ]),
+    Boleta.aggregate<{ _id: null; total: number; monto: number }>([
+      { $match: { ...matchBase, fechaCreacion: { $gte: inicioMes } } },
+      { $group: { _id: null, total: { $sum: 1 }, monto: { $sum: "$monto" } } },
+    ]),
+    matchAuditor
+      ? Boleta.aggregate<{ _id: string; total: number }>([
+          { $match: matchAuditor },
+          { $group: { _id: "$estado", total: { $sum: 1 } } },
+        ])
+      : Promise.resolve([] as { _id: string; total: number }[]),
   ])
 
   const stats: Record<string, number> = {
@@ -283,10 +330,20 @@ export async function estadisticas(authUser: AuthUser) {
   }
   for (const c of conteos) stats[c._id] = c.total
 
+  const resueltasMap: Record<string, number> = {}
+  for (const r of resueltasAgg) resueltasMap[r._id] = r.total
+
   return {
     ...stats,
     total: Object.values(stats).reduce((a, b) => a + b, 0),
     montoAprobado: montosAprobado[0]?.totalMonto ?? 0,
     montoPagado: montosPagado[0]?.totalMonto ?? 0,
+    porTipo: porTipo.map((p) => ({ tipo: p._id, total: p.total })),
+    tiempoPromedioResolucion: tiempoResolucion[0]?.promedio ?? null,
+    boletasMes: boletasMesAgg[0]?.total ?? 0,
+    montoMes: boletasMesAgg[0]?.monto ?? 0,
+    resueltasMes: (resueltasMap["aprobada"] ?? 0) + (resueltasMap["rechazada"] ?? 0),
+    aprobadasMes: resueltasMap["aprobada"] ?? 0,
+    rechazadasMes: resueltasMap["rechazada"] ?? 0,
   }
 }

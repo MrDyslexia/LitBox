@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { CheckCircle, XCircle, Clock, FileText } from "lucide-react"
+import { CheckCircle, XCircle, Clock, Timer, CalendarDays } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
 import StatusBadge from "@/components/status-badge"
@@ -52,6 +52,13 @@ export default function AuditorHomePage() {
     rechazadas: stats?.rechazada ?? 0,
   }
 
+  const resueltasMes = stats?.resueltasMes ?? 0
+  const aprobadasMes = stats?.aprobadasMes ?? 0
+  const rechazadasMes = stats?.rechazadasMes ?? 0
+  const tasaMes = resueltasMes > 0
+    ? Math.round((aprobadasMes / resueltasMes) * 100)
+    : null
+
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl">
       <BreadcrumbNav items={[{ label: "Resumen" }]} />
@@ -62,6 +69,7 @@ export default function AuditorHomePage() {
         </p>
       </div>
 
+      {/* Global counts row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         {[
           { label: "Por revisar", value: displayStats.pendientes, icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" />, color: "oklch(0.62 0.14 72)", bg: "oklch(0.97 0.03 72)" },
@@ -80,6 +88,106 @@ export default function AuditorHomePage() {
                 {loadingData ? "—" : stat.value}
               </p>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">{stat.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Tasa de aprobacion + tiempo promedio */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        {/* Tasa de aprobacion */}
+        <Card className="border shadow-none">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-medium text-muted-foreground">Tasa de aprobación</p>
+              <CheckCircle className="w-4 h-4" style={{ color: "oklch(0.58 0.14 162)" }} />
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+              {loadingData ? "—" : tasaMes != null ? `${tasaMes}%` : "—"}
+            </p>
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: loadingData || tasaMes == null ? "0%" : `${tasaMes}%`,
+                  background: "var(--primary)",
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {loadingData
+                ? ""
+                : resueltasMes === 0
+                ? "Sin actividad este mes"
+                : "De las boletas resueltas este mes por ti"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Tiempo promedio */}
+        <Card className="border shadow-none">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-medium text-muted-foreground">Tiempo promedio de resolución</p>
+              <Timer className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-foreground">
+              {loadingData
+                ? "—"
+                : stats?.tiempoPromedioResolucion != null
+                ? `${stats.tiempoPromedioResolucion.toFixed(1)} días`
+                : "—"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {loadingData
+                ? ""
+                : stats?.tiempoPromedioResolucion != null
+                ? "Promedio de días desde la creación"
+                : "Sin datos suficientes"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Personal stats this month */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        {[
+          {
+            label: "Resueltas este mes",
+            value: resueltasMes,
+            icon: <CalendarDays className="w-4 h-4" />,
+            color: "var(--primary)",
+            bg: "oklch(0.94 0.03 240)",
+          },
+          {
+            label: "Aprobadas este mes",
+            value: aprobadasMes,
+            icon: <CheckCircle className="w-4 h-4" />,
+            color: "oklch(0.58 0.14 162)",
+            bg: "oklch(0.95 0.04 162)",
+          },
+          {
+            label: "Rechazadas este mes",
+            value: rechazadasMes,
+            icon: <XCircle className="w-4 h-4" />,
+            color: "oklch(0.55 0.22 27)",
+            bg: "oklch(0.97 0.02 27)",
+          },
+        ].map((stat) => (
+          <Card key={stat.label} className="border shadow-none" style={{ background: "var(--muted)/30" }}>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground leading-tight">{stat.label}</span>
+                <div
+                  className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                  style={{ background: stat.bg }}
+                >
+                  <span style={{ color: stat.color }}>{stat.icon}</span>
+                </div>
+              </div>
+              <p className="text-xl font-bold text-foreground">
+                {loadingData ? "—" : stat.value}
+              </p>
             </CardContent>
           </Card>
         ))}

@@ -11,6 +11,9 @@ import {
   DollarSign,
   Users,
   ChevronDown,
+  Timer,
+  CalendarDays,
+  PieChart,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
@@ -84,6 +87,16 @@ export default function AdminHomePage() {
       .reduce((s, b) => s + b.monto, 0),
   }
 
+  const aprobadas = stats?.aprobada ?? 0
+  const pagadas = stats?.pagada ?? 0
+  const rechazadas = stats?.rechazada ?? 0
+  const tasaAprobacion = Math.round(
+    ((aprobadas + pagadas) / Math.max(aprobadas + pagadas + rechazadas, 1)) * 100
+  )
+
+  const porTipo = stats?.porTipo ?? []
+  const maxPorTipo = porTipo.length > 0 ? Math.max(...porTipo.map((p) => p.total)) : 1
+
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-6xl">
       <BreadcrumbNav items={[{ label: "Resumen general" }]} />
@@ -146,6 +159,77 @@ export default function AdminHomePage() {
         </Card>
       </div>
 
+      {/* New KPI row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        {/* Tasa de aprobacion */}
+        <Card className="border shadow-none">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Tasa de aprobación</span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "oklch(0.95 0.04 162)" }}>
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: "oklch(0.58 0.14 162)" }} />
+              </div>
+            </div>
+            <p className="text-xl sm:text-2xl font-bold text-foreground mb-2">
+              {loadingData ? "—" : `${tasaAprobacion}%`}
+            </p>
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: loadingData ? "0%" : `${tasaAprobacion}%`, background: "var(--primary)" }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {loadingData ? "" : `${aprobadas + pagadas} de ${aprobadas + pagadas + rechazadas} resueltas`}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Tiempo promedio */}
+        <Card className="border shadow-none">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Tiempo promedio</span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "oklch(0.94 0.03 240)" }}>
+                <Timer className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: "var(--primary)" }} />
+              </div>
+            </div>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">
+              {loadingData
+                ? "—"
+                : stats?.tiempoPromedioResolucion != null
+                ? `${stats.tiempoPromedioResolucion.toFixed(1)} días`
+                : "—"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {loadingData
+                ? ""
+                : stats?.tiempoPromedioResolucion != null
+                ? "De creación a revisión"
+                : "Sin datos suficientes"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Boletas este mes */}
+        <Card className="border shadow-none">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Boletas este mes</span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "oklch(0.94 0.03 290)" }}>
+                <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: "oklch(0.52 0.18 290)" }} />
+              </div>
+            </div>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">
+              {loadingData ? "—" : stats?.boletasMes ?? 0}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {loadingData ? "" : formatMonto(stats?.montoMes ?? 0)}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* User summary */}
       <Card className="border shadow-none">
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -190,6 +274,42 @@ export default function AdminHomePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Desglose por tipo de gasto */}
+      {!loadingData && porTipo.length > 0 && (
+        <Card className="border shadow-none">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-muted-foreground" />
+              Distribución por tipo de gasto
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {porTipo.map((item) => {
+              const pct = Math.round((item.total / maxPorTipo) * 100)
+              return (
+                <div key={item.tipo} className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-foreground w-40 shrink-0 truncate">
+                    {item.tipo}
+                  </span>
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${pct}%`,
+                        background: "oklch(0.55 0.18 240 / 0.7)",
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground w-6 text-right shrink-0">
+                    {item.total}
+                  </span>
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

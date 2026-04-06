@@ -63,6 +63,14 @@ export interface ApiStats {
   total: number
   montoAprobado: number
   montoPagado: number
+  // KPI extensions
+  porTipo: { tipo: string; total: number }[]
+  tiempoPromedioResolucion: number | null
+  boletasMes: number
+  montoMes: number
+  resueltasMes: number
+  aprobadasMes: number
+  rechazadasMes: number
 }
 
 export interface ApiPaginated<T> {
