@@ -5,7 +5,8 @@ ESTADO_SISTEMA.md
 ./Frontend/node_modules/
 ./Backend/node_modules/
 ./Frontend/cache/
-./Frontend/~/
+./Frontend/~/.bun/
+./Frontend/.next/
 .backend.log
 .frontend.log
 .backend.pid
