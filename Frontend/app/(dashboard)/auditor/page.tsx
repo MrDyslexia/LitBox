@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import {
   CheckCircle, XCircle, Clock, Timer,
-  AlertTriangle, TrendingUp, BarChart3, ChevronRight,
+  AlertTriangle, BarChart3, ChevronRight,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
+import PageHeader from "@/components/page-header"
 import StatusBadge from "@/components/status-badge"
+import KpiCard from "@/components/kpi-card"
 import { formatMonto, formatFecha, type Boleta } from "@/lib/mock-data"
 import { UserAvatar } from "@/components/user-avatar"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
@@ -40,216 +42,123 @@ export default function AuditorHomePage() {
   useEffect(() => { loadData() }, [loadData])
   useBoletasSync(loadData)
 
-  const pendientes   = boletas.filter((b) => b.estado === "pendiente" || b.estado === "en_revision")
-  const backlog      = (stats?.pendiente ?? 0) + (stats?.en_revision ?? 0)
-  const atrasadas    = stats?.boletasAtrasadas ?? 0
-  const resueltasMes = stats?.resueltasMes ?? 0
-  const aprobadasMes = stats?.aprobadasMes ?? 0
+  const pendientes    = boletas.filter((b) => b.estado === "pendiente" || b.estado === "en_revision")
+  const backlog       = (stats?.pendiente ?? 0) + (stats?.en_revision ?? 0)
+  const atrasadas     = stats?.boletasAtrasadas ?? 0
+  const resueltasMes  = stats?.resueltasMes ?? 0
+  const aprobadasMes  = stats?.aprobadasMes ?? 0
   const rechazadasMes = stats?.rechazadasMes ?? 0
-  const tasaMes      = resueltasMes > 0 ? Math.round((aprobadasMes / resueltasMes) * 100) : null
-  const tasaRechazo  = resueltasMes > 0 ? Math.round((rechazadasMes / resueltasMes) * 100) : null
+  const tasaMes       = resueltasMes > 0 ? Math.round((aprobadasMes / resueltasMes) * 100) : null
+  const tasaRechazo   = resueltasMes > 0 ? Math.round((rechazadasMes / resueltasMes) * 100) : null
   const throughputSem = Math.round(resueltasMes / 4.3)
-  const tiempoAvg    = stats?.tiempoPromedioResolucion ?? null
+  const tiempoAvg     = stats?.tiempoPromedioResolucion ?? null
 
-  // SLA semáforo: <2d bueno, 2-3d alerta, >3d crítico
-  const slaColor =
-    tiempoAvg == null   ? "var(--muted-foreground)"
-    : tiempoAvg < 2     ? "oklch(0.58 0.14 162)"
-    : tiempoAvg <= 3    ? "oklch(0.55 0.14 72)"
-                        : "oklch(0.55 0.22 27)"
+  const slaTone: "default" | "success" | "warn" | "danger" =
+    tiempoAvg == null ? "default"
+    : tiempoAvg < 2 ? "success"
+    : tiempoAvg <= 3 ? "warn"
+    : "danger"
   const slaLabel =
-    tiempoAvg == null   ? "Sin datos"
-    : tiempoAvg < 2     ? "Dentro de SLA"
-    : tiempoAvg <= 3    ? "En límite"
-                        : "Fuera de SLA"
+    tiempoAvg == null ? "Sin datos"
+    : tiempoAvg < 2 ? "Dentro de SLA"
+    : tiempoAvg <= 3 ? "En límite"
+    : "Fuera de SLA"
 
   return (
     <div className="flex min-h-full">
-      <div className="flex-1 min-w-0 p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex-1 min-w-0 p-4 sm:p-6 space-y-5 sm:space-y-6">
         <BreadcrumbNav items={[{ label: "Resumen" }]} />
 
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Panel de auditoría</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Rendimiento y cola de revisión en tiempo real.
-            </p>
-          </div>
-          <Link
-            href="/auditor/revision"
-            className="shrink-0 flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-white"
-            style={{ background: "var(--primary)" }}
-          >
-            Revisar cola
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
+        <PageHeader
+          title="Panel de auditoría"
+          description="Rendimiento y cola de revisión en tiempo real."
+          action={
+            <Link
+              href="/auditor/revision"
+              className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Revisar cola
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          }
+        />
 
-        {/* ── KPI HERO ROW ─────────────────────────────────────────── */}
+        {/* Hero row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-
-          {/* Backlog */}
-          <div
-            className="rounded-2xl p-4 sm:p-5"
-            style={{
-              background: backlog > 0 ? "oklch(0.97 0.03 72)" : "var(--secondary)",
-              border: `1px solid ${backlog > 0 ? "oklch(0.88 0.07 72)" : "var(--border)"}`,
-            }}
-          >
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-xs font-semibold text-muted-foreground">Backlog actual</p>
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: backlog > 0 ? "oklch(0.55 0.14 72 / 0.15)" : "var(--muted)" }}
-              >
-                <Clock className="w-4 h-4" style={{ color: backlog > 0 ? "oklch(0.55 0.14 72)" : "var(--muted-foreground)" }} />
+          <KpiCard
+            tone={backlog > 0 ? "warn" : "muted"}
+            size="lg"
+            label="Backlog actual"
+            icon={Clock}
+            value={loadingData ? "—" : backlog}
+            sub={
+              loadingData ? ""
+              : backlog === 0 ? "Cola limpia"
+              : `${stats?.pendiente ?? 0} pendiente · ${stats?.en_revision ?? 0} en revisión`
+            }
+          />
+          <KpiCard
+            tone={atrasadas > 0 ? "danger" : "muted"}
+            size="lg"
+            label="Fuera de SLA"
+            icon={AlertTriangle}
+            value={loadingData ? "—" : atrasadas}
+            sub={loadingData ? "" : atrasadas === 0 ? "Al día" : "+3 días sin resolución"}
+          />
+          <KpiCard
+            tone="muted"
+            size="lg"
+            label="Tasa de aprobación"
+            icon={CheckCircle}
+            value={loadingData ? "—" : tasaMes != null ? `${tasaMes}%` : "—"}
+            sub={
+              loadingData ? ""
+              : resueltasMes === 0 ? "Sin actividad este mes"
+              : `${resueltasMes} resueltas este mes`
+            }
+            footer={
+              <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted">
+                <div className="h-full rounded-full" style={{ width: tasaMes != null ? `${tasaMes}%` : "0%", background: "var(--chart-3)" }} />
               </div>
-            </div>
-            <p className="text-3xl sm:text-4xl font-black tracking-tight" style={{ color: backlog > 0 ? "oklch(0.38 0.12 72)" : "var(--foreground)" }}>
-              {loadingData ? "—" : backlog}
-            </p>
-            <p className="text-xs mt-1.5" style={{ color: backlog > 0 ? "oklch(0.52 0.1 72)" : "var(--muted-foreground)" }}>
-              {loadingData ? "" : backlog === 0 ? "Cola limpia" : `${stats?.pendiente ?? 0} pendiente · ${stats?.en_revision ?? 0} en revisión`}
-            </p>
-          </div>
-
-          {/* Atrasadas SLA */}
-          <div
-            className="rounded-2xl p-4 sm:p-5"
-            style={{
-              background: atrasadas > 0 ? "oklch(0.97 0.02 27)" : "var(--secondary)",
-              border: `1px solid ${atrasadas > 0 ? "oklch(0.88 0.06 27)" : "var(--border)"}`,
-            }}
-          >
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-xs font-semibold text-muted-foreground">Fuera de SLA</p>
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: atrasadas > 0 ? "oklch(0.55 0.22 27 / 0.12)" : "var(--muted)" }}
-              >
-                <AlertTriangle className="w-4 h-4" style={{ color: atrasadas > 0 ? "oklch(0.55 0.22 27)" : "var(--muted-foreground)" }} />
-              </div>
-            </div>
-            <p className="text-3xl sm:text-4xl font-black tracking-tight" style={{ color: atrasadas > 0 ? "oklch(0.45 0.22 27)" : "var(--foreground)" }}>
-              {loadingData ? "—" : atrasadas}
-            </p>
-            <p className="text-xs mt-1.5" style={{ color: atrasadas > 0 ? "oklch(0.55 0.18 27)" : "var(--muted-foreground)" }}>
-              {loadingData ? "" : atrasadas === 0 ? "Al día" : "+3 días sin resolución"}
-            </p>
-          </div>
-
-          {/* Tasa aprobación mes */}
-          <div
-            className="rounded-2xl p-4 sm:p-5"
-            style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
-          >
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-xs font-semibold text-muted-foreground">Tasa de aprobación</p>
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "oklch(0.95 0.04 162)" }}
-              >
-                <CheckCircle className="w-4 h-4" style={{ color: "oklch(0.58 0.14 162)" }} />
-              </div>
-            </div>
-            <p className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-              {loadingData ? "—" : tasaMes != null ? `${tasaMes}%` : "—"}
-            </p>
-            <div className="mt-2 space-y-1">
-              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: tasaMes != null ? `${tasaMes}%` : "0%", background: "oklch(0.58 0.14 162)" }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {loadingData ? "" : resueltasMes === 0 ? "Sin actividad este mes" : `${resueltasMes} resueltas este mes`}
-              </p>
-            </div>
-          </div>
+            }
+          />
         </div>
 
-        {/* ── PERFORMANCE KPIs ──────────────────────────────────────── */}
+        {/* Performance KPIs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {/* Throughput semanal */}
-          <div
-            className="rounded-2xl p-4 sm:p-5"
-            style={{ background: "var(--primary)" }}
-          >
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-xs font-semibold text-white/70">Throughput</p>
-              <BarChart3 className="w-4 h-4 text-white/40" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              {loadingData ? "—" : `${throughputSem}/sem`}
-            </p>
-            <p className="text-xs text-white/50 mt-1.5">
-              {loadingData ? "" : `${resueltasMes} este mes`}
-            </p>
-          </div>
-
-          {/* Tiempo promedio + SLA */}
-          <div
-            className="rounded-2xl p-4 sm:p-5"
-            style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
-          >
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-xs font-semibold text-muted-foreground">Tiempo promedio</p>
-              <Timer className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              {loadingData ? "—" : tiempoAvg != null ? `${tiempoAvg.toFixed(1)}d` : "—"}
-            </p>
-            <p className="text-xs mt-1.5 font-medium" style={{ color: slaColor }}>
-              {loadingData ? "" : slaLabel}
-            </p>
-          </div>
-
-          {/* Aprobadas mes */}
-          <div
-            className="rounded-2xl p-4 sm:p-5"
-            style={{ background: "oklch(0.97 0.01 162 / 0.6)", border: "1px solid oklch(0.92 0.02 162)" }}
-          >
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-xs font-semibold text-muted-foreground">Aprobadas / mes</p>
-              <CheckCircle className="w-4 h-4" style={{ color: "oklch(0.58 0.14 162)" }} />
-            </div>
-            <p className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              {loadingData ? "—" : aprobadasMes}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1.5">este mes</p>
-          </div>
-
-          {/* Tasa de rechazo */}
-          <div
-            className="rounded-2xl p-4 sm:p-5"
-            style={{ background: "oklch(0.97 0.02 27 / 0.6)", border: "1px solid oklch(0.92 0.04 27)" }}
-          >
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-xs font-semibold text-muted-foreground">Tasa de rechazo</p>
-              <XCircle className="w-4 h-4" style={{ color: "oklch(0.55 0.22 27)" }} />
-            </div>
-            <p className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              {loadingData ? "—" : tasaRechazo != null ? `${tasaRechazo}%` : "—"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1.5">
-              {loadingData ? "" : `${rechazadasMes} rechazadas`}
-            </p>
-          </div>
+          <KpiCard
+            tone="primary" size="md" label="Throughput" icon={BarChart3}
+            value={loadingData ? "—" : `${throughputSem}/sem`}
+            sub={loadingData ? "" : `${resueltasMes} este mes`}
+          />
+          <KpiCard
+            tone={slaTone} size="md" label="Tiempo promedio" icon={Timer}
+            value={loadingData ? "—" : tiempoAvg != null ? `${tiempoAvg.toFixed(1)}d` : "—"}
+            sub={loadingData ? "" : slaLabel}
+          />
+          <KpiCard
+            tone="success" size="md" label="Aprobadas / mes" icon={CheckCircle}
+            value={loadingData ? "—" : aprobadasMes}
+            sub="este mes"
+          />
+          <KpiCard
+            tone="danger" size="md" label="Tasa de rechazo" icon={XCircle}
+            value={loadingData ? "—" : tasaRechazo != null ? `${tasaRechazo}%` : "—"}
+            sub={loadingData ? "" : `${rechazadasMes} rechazadas`}
+          />
         </div>
 
-        {/* ── COLA PENDIENTE ────────────────────────────────────────── */}
+        {/* Cola pendiente */}
         {!loadingData && pendientes.length > 0 && (
-          <Card className="border shadow-none">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "oklch(0.55 0.14 72)" }} />
+          <Card className="border border-border shadow-none py-0">
+            <CardHeader className="px-4 sm:px-5 py-3 flex flex-row items-center justify-between border-b border-border">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--chart-4)" }} />
                 Cola de revisión
               </CardTitle>
               <Link
                 href="/auditor/revision"
-                className="text-xs font-medium flex items-center gap-1"
-                style={{ color: "var(--accent)" }}
+                className="text-[11px] font-semibold uppercase tracking-[0.12em] flex items-center gap-1 text-accent hover:text-accent/80 transition-colors"
               >
                 Ver todas <ChevronRight className="w-3 h-3" />
               </Link>
@@ -265,24 +174,27 @@ export default function AuditorHomePage() {
                     <Link
                       key={boleta.id}
                       href={`/auditor/revision/${boleta._id ?? boleta.id}`}
-                      className="w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-muted/50 transition-colors"
+                      className="w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-muted/40 transition-colors"
                     >
                       <UserAvatar
                         avatar={boleta.empleadoNombre.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                         avatarUrl={boleta.empleadoAvatarUrl}
                         name={boleta.empleadoNombre}
                         size={36}
-                        roleColor={esUrgente ? "oklch(0.55 0.22 27)" : "var(--accent)"}
+                        roleColor={esUrgente ? "var(--destructive)" : "var(--accent)"}
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{boleta.empleadoNombre}</p>
-                        <p className="text-xs text-muted-foreground">{boleta.tipo} · {formatFecha(boleta.fecha)}</p>
+                        <p className="text-xs text-muted-foreground truncate">{boleta.tipo} · {formatFecha(boleta.fecha)}</p>
                       </div>
                       <div className="text-right shrink-0 space-y-1">
-                        <p className="text-sm font-semibold text-foreground">{formatMonto(boleta.monto)}</p>
+                        <p className="text-sm font-semibold text-foreground tabular-nums">{formatMonto(boleta.monto)}</p>
                         <div className="flex items-center gap-1.5 justify-end">
                           {esUrgente && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "oklch(0.97 0.02 27)", color: "oklch(0.45 0.22 27)" }}>
+                            <span
+                              className="text-[10px] font-bold px-1.5 py-0.5 rounded tabular-nums"
+                              style={{ background: "var(--danger-bg)", color: "var(--danger-fg)" }}
+                            >
                               {diasEnCola}d
                             </span>
                           )}
@@ -299,10 +211,10 @@ export default function AuditorHomePage() {
 
         {!loadingData && pendientes.length === 0 && (
           <div
-            className="rounded-2xl p-6 text-center"
-            style={{ background: "oklch(0.97 0.01 162 / 0.4)", border: "1px solid oklch(0.92 0.02 162)" }}
+            className="rounded-xl p-6 text-center border"
+            style={{ background: "var(--success-bg)", borderColor: "var(--success-border)" }}
           >
-            <CheckCircle className="w-8 h-8 mx-auto mb-2" style={{ color: "oklch(0.58 0.14 162)" }} />
+            <CheckCircle className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--success-fg)" }} />
             <p className="text-sm font-semibold text-foreground">Cola limpia</p>
             <p className="text-xs text-muted-foreground mt-1">No hay boletas pendientes de revisión.</p>
           </div>

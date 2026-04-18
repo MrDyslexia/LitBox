@@ -7,11 +7,13 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
+import PageHeader from "@/components/page-header"
+import KpiCard from "@/components/kpi-card"
+import SectionHeader from "@/components/section-header"
+import { DistributionBars, RadialProgress } from "@/components/charts"
 import { formatMonto, type Boleta } from "@/lib/mock-data"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
-
-const GESTOR_COLOR = "oklch(0.36 0.08 252)"
 
 export default function GestorEstadisticasPage() {
   const [stats, setStats]       = useState<ApiStats | null>(null)
@@ -54,240 +56,138 @@ export default function GestorEstadisticasPage() {
   const atrasadas      = stats?.boletasAtrasadas ?? 0
   const porTipo        = stats?.porTipo ?? []
 
-  // Payment SLA ratio: pagada / (pagada + aprobada)
   const totalClosed = pagada + aprobadaCount
   const paymentRate = totalClosed > 0 ? Math.round((pagada / totalClosed) * 100) : null
 
-  // DPO semáforos
-  const dpoBad  = oldestUnpaidDays != null && oldestUnpaidDays > 5
-  const dpoWarn = oldestUnpaidDays != null && oldestUnpaidDays >= 3 && !dpoBad
-  const dpoOk   = oldestUnpaidDays != null && !dpoBad && !dpoWarn
-  const dpoColor  = dpoOk ? "oklch(0.58 0.14 162)" : dpoWarn ? "oklch(0.55 0.14 72)" : dpoBad ? "oklch(0.55 0.22 27)" : "var(--muted-foreground)"
-  const dpoBg     = dpoBad ? "oklch(0.97 0.02 27)" : dpoWarn ? "oklch(0.97 0.03 72)" : "var(--secondary)"
-  const dpoBorder = dpoBad ? "oklch(0.88 0.06 27)" : dpoWarn ? "oklch(0.88 0.07 72)" : "var(--border)"
+  const dpoTone: "default" | "success" | "warn" | "danger" =
+    oldestUnpaidDays == null ? "default"
+    : oldestUnpaidDays > 5 ? "danger"
+    : oldestUnpaidDays >= 3 ? "warn"
+    : "success"
 
-  // Cycle time semáforo
-  const cycleColor =
-    tiempoEndToEnd == null   ? "var(--muted-foreground)"
-    : tiempoEndToEnd < 7    ? "oklch(0.58 0.14 162)"
-    : tiempoEndToEnd <= 14  ? "oklch(0.55 0.14 72)"
-                             : "oklch(0.55 0.22 27)"
+  const cycleTone: "default" | "success" | "warn" | "danger" =
+    tiempoEndToEnd == null ? "default"
+    : tiempoEndToEnd < 7 ? "success"
+    : tiempoEndToEnd <= 14 ? "warn"
+    : "danger"
   const cycleLabel =
-    tiempoEndToEnd == null  ? "Sin datos suficientes"
-    : tiempoEndToEnd < 7   ? "Ciclo eficiente (<7 días)"
+    tiempoEndToEnd == null ? "Sin datos suficientes"
+    : tiempoEndToEnd < 7 ? "Ciclo eficiente (<7 días)"
     : tiempoEndToEnd <= 14 ? "Ciclo moderado (7–14 días)"
-                            : "Ciclo lento (>14 días)"
+    : "Ciclo lento (>14 días)"
 
-  const top5Tipos = porTipo.slice(0, 5)
-  const maxTipo   = top5Tipos.length > 0 ? Math.max(...top5Tipos.map((t) => t.total)) : 1
-
-  const V = loading ? "—" : undefined
+  const top5Tipos = porTipo.slice(0, 5).map((t) => ({ label: t.tipo, value: t.total }))
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-4xl">
-      <BreadcrumbNav
-        items={[
-          { label: "Resumen", href: "/gestor" },
-          { label: "Estadísticas" },
-        ]}
+    <div className="p-4 sm:p-6 space-y-8 max-w-5xl">
+      <BreadcrumbNav items={[{ label: "Resumen", href: "/gestor" }, { label: "Estadísticas" }]} />
+
+      <PageHeader
+        title="Estadísticas de pagos"
+        description="KPIs financieros y de eficiencia del ciclo de reembolsos."
       />
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Estadísticas de pagos</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          KPIs financieros y de eficiencia del ciclo de reembolsos.
-        </p>
-      </div>
 
-      {/* ── SECCIÓN 1: EXPOSICIÓN FINANCIERA ────────────────────── */}
+      {/* Exposición financiera */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <DollarSign className="w-3.5 h-3.5" />
-          Exposición financiera actual
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Cash Exposure hero */}
-          <div className="rounded-2xl p-5" style={{ background: GESTOR_COLOR }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-white/70">Cash Exposure</span>
-              <DollarSign className="w-4 h-4 text-white/40" />
-            </div>
-            <p className="text-5xl font-black text-white tracking-tight">
-              {V ?? formatMonto(montoPorPagar)}
-            </p>
-            <p className="text-sm text-white/60 mt-2">monto total sin pagar</p>
-            <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-              <span className="text-xs text-white/50">Boletas pendientes</span>
-              <span className="text-sm font-bold text-white">{V ?? aprobadaCount}</span>
-            </div>
-          </div>
-
-          {/* DPO */}
-          <div className="rounded-2xl p-5" style={{ background: dpoBg, border: `1px solid ${dpoBorder}` }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                DPO — Antigüedad máxima
-              </span>
-              <AlertTriangle className="w-4 h-4" style={{ color: dpoColor }} />
-            </div>
-            <p className="text-5xl font-black text-foreground tracking-tight">
-              {V ?? (oldestUnpaidDays != null ? `${oldestUnpaidDays}d` : "—")}
-            </p>
-            <p className="text-sm mt-2 font-semibold" style={{ color: dpoColor }}>
-              {loading ? "" : oldestUnpaidDays == null ? "Sin deuda pendiente"
-                : dpoBad ? "Pago urgente requerido"
-                : dpoWarn ? "Atención requerida"
-                : "Al día"}
-            </p>
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground">Benchmark: &lt;3 días ideal, &lt;5 días aceptable</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Fila secundaria */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            {
-              label: "Payment Rate",
-              value: V ?? (paymentRate != null ? `${paymentRate}%` : "—"),
-              sub: "boletas pagadas del total",
-              icon: TrendingUp,
-              color: "oklch(0.58 0.14 162)",
-              bg: "oklch(0.95 0.04 162)",
-            },
-            {
-              label: "Fuera de SLA",
-              value: V ?? atrasadas,
-              sub: atrasadas > 0 ? "+3 días sin resolución" : "al día",
-              icon: AlertTriangle,
-              color: atrasadas > 0 ? "oklch(0.55 0.22 27)" : "var(--muted-foreground)",
-              bg: atrasadas > 0 ? "oklch(0.97 0.02 27)" : "var(--muted)",
-            },
-            {
-              label: "Total pagado",
-              value: V ?? formatMonto(montoPagado),
-              sub: `${pagada} boletas históricas`,
-              icon: CheckCircle,
-              color: "oklch(0.58 0.14 162)",
-              bg: "oklch(0.95 0.04 162)",
-            },
-            {
-              label: "Pagado este mes",
-              value: V ?? formatMonto(montoPagadoMes),
-              sub: `${pagadasMes} boletas`,
-              icon: CalendarDays,
-              color: GESTOR_COLOR,
-              bg: "oklch(0.94 0.02 252)",
-            },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="rounded-2xl p-4"
-              style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-muted-foreground leading-tight">{s.label}</p>
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: s.bg }}>
-                  <s.icon className="w-3.5 h-3.5" style={{ color: s.color }} />
-                </div>
+        <SectionHeader icon={DollarSign} label="Exposición financiera actual" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <KpiCard
+            tone="primary" size="lg" label="Cash Exposure" icon={DollarSign}
+            value={loading ? "—" : formatMonto(montoPorPagar)}
+            sub="monto total sin pagar"
+            footer={
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-[0.14em] text-primary-foreground/60">Boletas pendientes</span>
+                <span className="text-sm font-bold tabular-nums">{loading ? "—" : aprobadaCount}</span>
               </div>
-              <p className="text-lg font-black text-foreground tracking-tight leading-tight">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{s.sub}</p>
-            </div>
-          ))}
+            }
+          />
+          <KpiCard
+            tone={dpoTone} size="lg" label="DPO — antigüedad máxima" icon={AlertTriangle}
+            value={loading ? "—" : oldestUnpaidDays != null ? `${oldestUnpaidDays}d` : "—"}
+            sub={
+              loading ? ""
+              : oldestUnpaidDays == null ? "Sin deuda pendiente"
+              : oldestUnpaidDays > 5 ? "Pago urgente requerido"
+              : oldestUnpaidDays >= 3 ? "Atención requerida"
+              : "Al día"
+            }
+            footer={<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Benchmark: &lt;3 días ideal · &lt;5 días aceptable</p>}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <KpiCard
+            tone="success" size="md" label="Payment Rate" icon={TrendingUp}
+            value={loading ? "—" : paymentRate != null ? `${paymentRate}%` : "—"}
+            sub="boletas pagadas del total"
+          />
+          <KpiCard
+            tone={atrasadas > 0 ? "danger" : "muted"} size="md" label="Fuera de SLA" icon={AlertTriangle}
+            value={loading ? "—" : atrasadas}
+            sub={atrasadas > 0 ? "+3 días sin resolución" : "al día"}
+          />
+          <KpiCard
+            tone="success" size="md" label="Total pagado" icon={CheckCircle}
+            value={loading ? "—" : formatMonto(montoPagado)}
+            sub={`${pagada} históricas`}
+          />
+          <KpiCard
+            tone="muted" size="md" label="Pagado este mes" icon={CalendarDays}
+            value={loading ? "—" : formatMonto(montoPagadoMes)}
+            sub={`${pagadasMes} boletas`}
+          />
         </div>
       </section>
 
-      {/* ── SECCIÓN 2: EFICIENCIA DEL CICLO ─────────────────────── */}
+      {/* Eficiencia ciclo */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <Target className="w-3.5 h-3.5" />
-          Eficiencia del ciclo de pago
-        </h2>
+        <SectionHeader icon={Target} label="Eficiencia del ciclo de pago" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <KpiCard
+            tone={cycleTone} size="lg"
+            label="Ciclo E2E (creación → pago)"
+            icon={Clock}
+            value={loading ? "—" : tiempoEndToEnd != null ? `${tiempoEndToEnd.toFixed(1)}d` : "—"}
+            sub={loading ? "" : cycleLabel}
+            footer={<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Incluye tiempo de auditoría + pago</p>}
+          />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Cycle time E2E */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Ciclo E2E (creación → pago)
-              </span>
-              <Clock className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <p className="text-5xl font-black text-foreground tracking-tight">
-              {V ?? (tiempoEndToEnd != null ? `${tiempoEndToEnd.toFixed(1)}d` : "—")}
-            </p>
-            <p className="text-sm mt-2 font-semibold" style={{ color: cycleColor }}>
-              {loading ? "" : cycleLabel}
-            </p>
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground">Incluye tiempo de auditoría + pago</p>
-            </div>
-          </div>
-
-          {/* Payment rate con barra */}
-          <div className="rounded-2xl p-5" style={{ background: "oklch(0.97 0.01 162 / 0.5)", border: "1px solid oklch(0.92 0.02 162)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <Card className="border border-border shadow-none py-0" style={{ background: "var(--success-bg)", borderColor: "var(--success-border)" }}>
+            <CardContent className="p-5 flex flex-col items-center gap-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground self-start">
                 Payment Rate (global)
-              </span>
-              <TrendingUp className="w-4 h-4" style={{ color: "oklch(0.58 0.14 162)" }} />
-            </div>
-            <p className="text-5xl font-black text-foreground tracking-tight">
-              {V ?? (paymentRate != null ? `${paymentRate}%` : "—")}
-            </p>
-            <div className="w-full h-2 rounded-full overflow-hidden mt-3" style={{ background: "var(--muted)" }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: paymentRate != null ? `${paymentRate}%` : "0%", background: "oklch(0.58 0.14 162)" }}
-              />
-            </div>
-            <div className="mt-3 pt-3 border-t border-border flex justify-between text-xs text-muted-foreground">
-              <span>Pagadas: {V ?? pagada}</span>
-              <span>Pendientes: {V ?? aprobadaCount}</span>
-            </div>
-          </div>
+              </p>
+              <RadialProgress
+                value={paymentRate ?? 0}
+                size={160}
+                color="var(--chart-3)"
+              >
+                <span className="text-3xl font-black text-foreground tabular-nums tracking-tight">
+                  {loading ? "—" : paymentRate != null ? `${paymentRate}%` : "—"}
+                </span>
+              </RadialProgress>
+              <div className="w-full flex justify-between pt-2 text-[11px] text-muted-foreground">
+                <span>Pagadas: <span className="font-bold text-foreground tabular-nums">{loading ? "—" : pagada}</span></span>
+                <span>Pendientes: <span className="font-bold text-foreground tabular-nums">{loading ? "—" : aprobadaCount}</span></span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* ── SECCIÓN 3: DISTRIBUCIÓN POR TIPO ────────────────────── */}
+      {/* Distribución */}
       {!loading && top5Tipos.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <BarChart3 className="w-3.5 h-3.5" />
-            Distribución por categoría de gasto
-          </h2>
-          <Card className="border shadow-none">
-            <CardHeader className="pb-2">
+          <SectionHeader icon={BarChart3} label="Distribución por categoría" />
+          <Card className="border border-border shadow-none py-0">
+            <CardHeader className="px-5 py-3 border-b border-border">
               <CardTitle className="text-sm font-semibold text-muted-foreground">
                 Top categorías (total acumulado)
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {top5Tipos.map(({ tipo, total }, i) => {
-                const pct = Math.round((total / maxTipo) * 100)
-                const barColors = [GESTOR_COLOR, "oklch(0.52 0.21 28)", "oklch(0.58 0.14 162)", "oklch(0.55 0.14 72)", "oklch(0.55 0.22 27)"]
-                return (
-                  <div key={tipo}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[10px] font-mono font-bold text-muted-foreground shrink-0">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span className="text-sm font-medium text-foreground truncate">{tipo}</span>
-                      </div>
-                      <span className="text-sm font-black text-foreground shrink-0 ml-3">{total}</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${pct}%`, background: barColors[i] ?? GESTOR_COLOR }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
+            <CardContent className="p-4 sm:p-5">
+              <DistributionBars data={top5Tipos} />
             </CardContent>
           </Card>
         </section>
