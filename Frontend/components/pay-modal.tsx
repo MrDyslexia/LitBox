@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { formatMonto, formatFecha, type Boleta } from "@/lib/mock-data"
 import { uploadsApi } from "@/lib/api"
 
-const GESTOR_COLOR = "oklch(0.52 0.18 290)"
+const GESTOR_COLOR = "oklch(0.36 0.08 252)"
 
 interface PayModalProps {
   boleta: Boleta

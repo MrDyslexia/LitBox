@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
 import { AlertCircle, Eye, EyeOff, FileText, CheckCircle, ArrowLeft } from "lucide-react"
 import { auth } from "@/lib/api"
 
@@ -108,55 +107,145 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     { label: "Administrador",  email: "admin@empresa.com" },
   ]
 
-  // ── Left panel (compartido) ───────────────────────────────────────────────
-
+  // ── Left panel ────────────────────────────────────────────────────────────
   const LeftPanel = () => (
-    <div className="hidden xl:flex flex-col w-[42%] shrink-0" style={{ background: "var(--primary)" }}>
-      <div className="flex items-center gap-3 px-10 py-5" style={{ background: "oklch(0.13 0.04 243)", borderBottom: "1px solid oklch(0.22 0.055 243)" }}>
-        <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}>
-          <FileText className="w-4 h-4 text-white" />
-        </div>
-        <div>
-          <p className="text-[14px] font-bold text-white tracking-tight leading-none">LitBox</p>
-          <p className="text-[9px] font-semibold tracking-widest uppercase mt-0.5" style={{ color: "var(--accent)" }}>Reembolsos</p>
+    <div
+      className="hidden xl:flex flex-col w-[44%] shrink-0 relative overflow-hidden"
+      style={{ background: "linear-gradient(160deg, #0a1628 0%, #0f1e38 50%, #162544 100%)" }}
+    >
+      {/* Subtle grid pattern */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }}
+      />
+      {/* ITransporte orange-red radial glow top-right */}
+      <div
+        className="absolute top-0 right-0 w-96 h-96 pointer-events-none"
+        style={{ background: "radial-gradient(circle at 80% 20%, rgba(217,66,20,0.10) 0%, transparent 65%)" }}
+      />
+      {/* Subtle navy accent bottom-left */}
+      <div
+        className="absolute bottom-0 left-0 w-80 h-80 pointer-events-none"
+        style={{ background: "radial-gradient(circle at 20% 85%, rgba(30,48,80,0.5) 0%, transparent 60%)" }}
+      />
+
+      {/* Brand bar */}
+      <div
+        className="relative z-10 flex items-center justify-between px-9 py-6 border-b"
+        style={{ borderColor: "rgba(255,255,255,0.07)" }}
+      >
+        <img
+          src="https://www.itransporte.cl/wp-content/uploads/2019/11/logo.png"
+          alt="ITransporte"
+          className="h-7 w-auto"
+          style={{ filter: "brightness(0) invert(1)", opacity: 0.9 }}
+        />
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full border"
+          style={{ background: "rgba(217,66,20,0.12)", borderColor: "rgba(217,66,20,0.28)" }}
+        >
+          <div
+            className="w-5 h-5 rounded flex items-center justify-center shrink-0"
+            style={{ background: "#D94214" }}
+          >
+            <FileText className="w-2.5 h-2.5 text-white" />
+          </div>
+          <span className="text-white text-[11px] font-semibold tracking-wide">LitBox</span>
         </div>
       </div>
-      <div className="flex flex-col justify-between flex-1 px-10 py-12">
-        <div className="space-y-8">
-          <div className="inline-block text-[11px] font-semibold tracking-widest uppercase px-3 py-1 rounded" style={{ background: "var(--accent)", color: "white" }}>
-            Plataforma corporativa
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col justify-between flex-1 px-9 py-10">
+        <div className="space-y-10">
+          <div className="space-y-5">
+            <div
+              className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-[0.12em] uppercase px-2.5 py-1.5 rounded-full border"
+              style={{ background: "rgba(217,66,20,0.10)", borderColor: "rgba(217,66,20,0.28)", color: "#F0956A" }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              Plataforma Corporativa
+            </div>
+            <h1 className="text-[2.5rem] font-bold leading-[1.18] text-white tracking-tight">
+              Gestión de boletas<br />
+              <span style={{ color: "#D94214" }}>centralizada.</span>
+            </h1>
+            <p
+              className="text-[13.5px] leading-relaxed max-w-[285px]"
+              style={{ color: "rgba(255,255,255,0.5)" }}
+            >
+              Centraliza, gestiona y haz seguimiento de todos los gastos corporativos en un solo lugar.
+            </p>
           </div>
-          <h1 className="text-[2.4rem] font-bold leading-tight text-white text-balance">Gestión de boletas de gastos</h1>
-          <p className="text-[14px] leading-relaxed" style={{ color: "oklch(0.7 0.03 230)" }}>
-            Centraliza, gestiona y haz seguimiento de todos los gastos de tu empresa.
-          </p>
-          <div className="space-y-3 pt-2">
+
+          <div className="space-y-0">
             {[
               { num: "01", title: "Subida de comprobantes", desc: "Los empleados fotografían y suben sus boletas fácilmente." },
               { num: "02", title: "Auditoría centralizada", desc: "Los auditores revisan, aprueban o rechazan cada solicitud." },
               { num: "03", title: "Control total", desc: "El administrador tiene visibilidad completa del sistema." },
-            ].map((item) => (
-              <div key={item.num} className="flex gap-4 items-start">
-                <span className="text-[11px] font-bold shrink-0 mt-0.5" style={{ color: "var(--accent)" }}>{item.num}</span>
+            ].map((item, idx) => (
+              <div
+                key={item.num}
+                className="flex gap-4 items-start py-4"
+                style={{ borderTop: idx > 0 ? "1px solid rgba(255,255,255,0.07)" : "none" }}
+              >
+                <span
+                  className="text-[10px] font-mono font-bold shrink-0 mt-0.5"
+                  style={{ color: "#D94214" }}
+                >
+                  {item.num}
+                </span>
                 <div>
-                  <p className="text-[13px] font-semibold text-white">{item.title}</p>
-                  <p className="text-[12px] mt-0.5" style={{ color: "oklch(0.62 0.02 230)" }}>{item.desc}</p>
+                  <p className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.88)" }}>
+                    {item.title}
+                  </p>
+                  <p className="text-[12px] mt-0.5" style={{ color: "rgba(255,255,255,0.42)" }}>
+                    {item.desc}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <p className="text-[11px]" style={{ color: "oklch(0.42 0.02 230)" }}>© {new Date().getFullYear()} LitBox. Todos los derechos reservados.</p>
+
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.22)" }}>
+            © {new Date().getFullYear()} LitBox · ITransporte
+          </p>
+          <div className="flex gap-1.5 items-center">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
+            <span className="w-5 h-1.5 rounded-full" style={{ background: "#D94214" }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
+          </div>
+        </div>
       </div>
     </div>
   )
 
   const MobileHeader = () => (
-    <div className="flex xl:hidden items-center gap-2.5 px-6 py-4" style={{ background: "var(--primary)", borderBottom: "1px solid oklch(0.22 0.055 243)" }}>
-      <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: "var(--accent)" }}>
-        <FileText className="w-3.5 h-3.5 text-white" />
+    <div
+      className="flex xl:hidden items-center gap-3 px-5 py-3.5 border-b"
+      style={{ background: "#0a1628", borderColor: "rgba(255,255,255,0.07)" }}
+    >
+      <img
+        src="https://www.itransporte.cl/wp-content/uploads/2019/11/logo.png"
+        alt="ITransporte"
+        className="h-5 w-auto"
+        style={{ filter: "brightness(0) invert(1)", opacity: 0.88 }}
+      />
+      <div className="h-3.5 w-px" style={{ background: "rgba(255,255,255,0.2)" }} />
+      <div className="flex items-center gap-1.5">
+        <div
+          className="w-5 h-5 rounded flex items-center justify-center shrink-0"
+          style={{ background: "#D94214" }}
+        >
+          <FileText className="w-2.5 h-2.5 text-white" />
+        </div>
+        <span className="text-white text-[12px] font-semibold">LitBox</span>
       </div>
-      <span className="text-[13px] font-bold text-white tracking-tight">LitBox</span>
     </div>
   )
 
@@ -168,56 +257,107 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <LeftPanel />
         <div className="flex-1 flex flex-col bg-background">
           <MobileHeader />
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-[380px] space-y-5">
-              <div className="space-y-1">
-                <h2 className="text-[1.6rem] font-bold text-foreground">Iniciar sesión</h2>
-                <p className="text-[13px] text-muted-foreground">Ingresa con tu correo institucional para continuar.</p>
-              </div>
-
-              <div className="rounded-md border p-6 space-y-4" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email" className="text-[13px] font-medium">Correo institucional</Label>
-                    <Input id="email" type="email" placeholder="usuario@empresa.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-10 sm:h-9 text-[13px]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password" className="text-[13px] font-medium">Contraseña</Label>
-                      <button type="button" onClick={() => { setStep("forgot_email"); setForgotEmail(email) }} className="text-[12px] underline" style={{ color: "var(--accent)" }}>
-                        ¿Olvidaste tu contraseña?
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-10 sm:h-9 pr-10 text-[13px]" />
-                      <button type="button" aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                        {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                  {loginError && (
-                    <div className="flex items-center gap-2 text-[12px] p-2.5 rounded" style={{ background: "oklch(0.98 0.015 27)", color: "var(--destructive)", border: "1px solid oklch(0.9 0.06 27)" }}>
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />{loginError}
-                    </div>
-                  )}
-                  <Button type="submit" className="w-full h-10 sm:h-9 text-[13px] font-semibold text-white" style={{ background: "var(--primary)" }} disabled={loginLoading}>
-                    {loginLoading ? "Ingresando..." : "Ingresar al sistema"}
-                  </Button>
-                </form>
-              </div>
-
-              <div className="rounded-md border p-4 space-y-2.5" style={{ background: "oklch(0.96 0.01 162 / 0.2)", borderColor: "oklch(0.85 0.04 162 / 0.5)" }}>
-                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "oklch(0.45 0.1 162)" }}>
-                  Cuentas de demostración — contraseña: demo1234
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="w-full max-w-[400px] space-y-8">
+              <div className="space-y-1.5">
+                <h2 className="text-[1.9rem] font-bold tracking-tight text-foreground">Iniciar sesión</h2>
+                <p className="text-[13.5px] text-muted-foreground">
+                  Ingresa con tu correo institucional para continuar.
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {demoAccounts.map((acc) => (
-                    <button key={acc.email} type="button" onClick={() => setEmail(acc.email)}
-                      className="text-[12px] px-3 py-1 rounded border font-medium transition-all"
-                      style={{ borderColor: "oklch(0.75 0.1 162 / 0.6)", color: "oklch(0.38 0.12 162)", background: "oklch(0.97 0.02 162 / 0.5)" }}>
-                      {acc.label}
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-[13px] font-semibold">Correo institucional</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="usuario@empresa.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11 text-[14px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-[13px] font-semibold">Contraseña</Label>
+                    <button
+                      type="button"
+                      onClick={() => { setStep("forgot_email"); setForgotEmail(email) }}
+                      className="text-[12px] font-medium transition-colors cursor-pointer hover:underline text-primary"
+                    >
+                      ¿Olvidaste tu contraseña?
                     </button>
-                  ))}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="h-11 pr-10 text-[14px]"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                {loginError && (
+                  <div
+                    className="flex items-center gap-2.5 text-[13px] px-3.5 py-3 rounded-lg"
+                    style={{
+                      background: "oklch(0.97 0.015 27)",
+                      color: "var(--destructive)",
+                      border: "1px solid oklch(0.88 0.06 27)",
+                    }}
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0" />{loginError}
+                  </div>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full h-11 text-[14px] font-semibold cursor-pointer"
+                  disabled={loginLoading}
+                >
+                  {loginLoading ? "Verificando..." : "Ingresar al sistema"}
+                </Button>
+              </form>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Demo
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+                <div className="space-y-2.5">
+                  <p className="text-[12px] text-muted-foreground text-center">
+                    Contraseña:{" "}
+                    <code className="font-mono px-1.5 py-0.5 rounded bg-muted text-foreground text-[11px]">
+                      demo1234
+                    </code>
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {demoAccounts.map((acc) => (
+                      <button
+                        key={acc.email}
+                        type="button"
+                        onClick={() => setEmail(acc.email)}
+                        className="text-[12px] px-3 py-2.5 rounded-lg border font-medium transition-all cursor-pointer text-left hover:border-primary hover:text-primary border-border text-muted-foreground"
+                      >
+                        {acc.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -235,31 +375,41 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <LeftPanel />
         <div className="flex-1 flex flex-col bg-background">
           <MobileHeader />
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-[380px] space-y-5">
-              <button onClick={resetForgot} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="w-full max-w-[400px] space-y-8">
+              <button
+                onClick={resetForgot}
+                className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
                 <ArrowLeft className="w-4 h-4" /> Volver al inicio de sesión
               </button>
-              <div className="space-y-1">
-                <h2 className="text-[1.6rem] font-bold text-foreground">Recuperar contraseña</h2>
-                <p className="text-[13px] text-muted-foreground">Ingresa tu correo y te enviaremos un código de verificación.</p>
+              <div className="space-y-1.5">
+                <h2 className="text-[1.9rem] font-bold tracking-tight text-foreground">Recuperar contraseña</h2>
+                <p className="text-[13.5px] text-muted-foreground">
+                  Ingresa tu correo y te enviaremos un código de verificación.
+                </p>
               </div>
-              <Card className="border shadow-none">
-                <CardContent className="p-6">
-                  <form onSubmit={handleSolicitarCodigo} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-[13px] font-medium">Correo institucional</Label>
-                      <Input type="email" placeholder="usuario@empresa.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required className="h-10 sm:h-9 text-[13px]" />
-                    </div>
-                    {forgotMsg && (
-                      <p className="text-xs text-destructive">{forgotMsg}</p>
-                    )}
-                    <Button type="submit" className="w-full h-10 sm:h-9 text-[13px] font-semibold text-white" style={{ background: "var(--primary)" }} disabled={sendingCodigo}>
-                      {sendingCodigo ? "Enviando..." : "Enviar código de verificación"}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+              <form onSubmit={handleSolicitarCodigo} className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold">Correo institucional</Label>
+                  <Input
+                    type="email"
+                    placeholder="usuario@empresa.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    className="h-11 text-[14px]"
+                  />
+                </div>
+                {forgotMsg && <p className="text-[13px] text-destructive">{forgotMsg}</p>}
+                <Button
+                  type="submit"
+                  className="w-full h-11 text-[14px] font-semibold cursor-pointer"
+                  disabled={sendingCodigo}
+                >
+                  {sendingCodigo ? "Enviando..." : "Enviar código de verificación"}
+                </Button>
+              </form>
             </div>
           </div>
         </div>
@@ -274,85 +424,139 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       <LeftPanel />
       <div className="flex-1 flex flex-col bg-background">
         <MobileHeader />
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-[400px] space-y-5">
-            <button onClick={() => setStep("forgot_email")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-[420px] space-y-8">
+            <button
+              onClick={() => setStep("forgot_email")}
+              className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
               <ArrowLeft className="w-4 h-4" /> Cambiar correo
             </button>
-            <div className="space-y-1">
-              <h2 className="text-[1.6rem] font-bold text-foreground">Nueva contraseña</h2>
-              <p className="text-[13px] text-muted-foreground">Ingresa el código enviado a <strong>{forgotEmail}</strong> y elige una nueva contraseña.</p>
+            <div className="space-y-1.5">
+              <h2 className="text-[1.9rem] font-bold tracking-tight text-foreground">Nueva contraseña</h2>
+              <p className="text-[13.5px] text-muted-foreground">
+                Código enviado a <strong className="text-foreground">{forgotEmail}</strong>. Elige una nueva contraseña.
+              </p>
             </div>
 
             {recoverSuccess ? (
-              <Card className="border shadow-none">
-                <CardContent className="p-8 text-center space-y-3">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto" style={{ background: "oklch(0.95 0.04 145)" }}>
-                    <CheckCircle className="w-7 h-7" style={{ color: "oklch(0.56 0.13 145)" }} />
-                  </div>
-                  <h3 className="text-base font-bold text-foreground">¡Contraseña restablecida!</h3>
-                  <p className="text-sm text-muted-foreground">Ya puedes iniciar sesión con tu nueva contraseña.</p>
-                  <Button onClick={resetForgot} className="mt-2 text-white font-semibold" style={{ background: "var(--primary)" }}>
-                    Ir al inicio de sesión
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="text-center space-y-5 py-4">
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto"
+                  style={{ background: "oklch(0.95 0.04 145)" }}
+                >
+                  <CheckCircle className="w-8 h-8" style={{ color: "oklch(0.56 0.13 145)" }} />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-[1.1rem] font-bold text-foreground">¡Contraseña restablecida!</h3>
+                  <p className="text-[13.5px] text-muted-foreground">
+                    Ya puedes iniciar sesión con tu nueva contraseña.
+                  </p>
+                </div>
+                <Button onClick={resetForgot} className="font-semibold cursor-pointer">
+                  Ir al inicio de sesión
+                </Button>
+              </div>
             ) : (
-              <Card className="border shadow-none">
-                <CardContent className="p-6">
-                  <form onSubmit={handleRecuperar} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-[13px] font-medium">Código de verificación <span className="text-destructive">*</span></Label>
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={6}
-                        placeholder="000000"
-                        value={codigo}
-                        onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                        className="h-10 font-mono tracking-widest text-center text-lg w-40"
-                        required
-                      />
-                      <p className="text-xs text-muted-foreground">El código expira en 15 minutos.</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[13px] font-medium">Nueva contraseña <span className="text-destructive">*</span></Label>
-                      <div className="relative">
-                        <Input type={showNewPass ? "text" : "password"} placeholder="Mínimo 8 caracteres" value={newPass} onChange={(e) => setNewPass(e.target.value)} className="h-10 sm:h-9 pr-10 text-[13px]" autoComplete="new-password" required />
-                        <button type="button" aria-label={showNewPass ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowNewPass(!showNewPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                          {showNewPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
+              <form onSubmit={handleRecuperar} className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold">
+                    Código de verificación <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={codigo}
+                    onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="h-11 font-mono tracking-widest text-center text-lg w-40"
+                    required
+                  />
+                  <p className="text-[12px] text-muted-foreground">El código expira en 15 minutos.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold">
+                    Nueva contraseña <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type={showNewPass ? "text" : "password"}
+                      placeholder="Mínimo 8 caracteres"
+                      value={newPass}
+                      onChange={(e) => setNewPass(e.target.value)}
+                      className="h-11 pr-10 text-[14px]"
+                      autoComplete="new-password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      aria-label={showNewPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {newPass && (
+                    <div className="space-y-1">
+                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{ width: strength.width, background: strength.color }}
+                        />
                       </div>
-                      {newPass && (
-                        <div className="space-y-0.5">
-                          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{ width: strength.width, background: strength.color }} />
-                          </div>
-                          <p className="text-xs" style={{ color: strength.color }}>{strength.label}</p>
-                        </div>
-                      )}
+                      <p className="text-[12px]" style={{ color: strength.color }}>{strength.label}</p>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[13px] font-medium">Confirmar contraseña <span className="text-destructive">*</span></Label>
-                      <div className="relative">
-                        <Input type={showConfirmPass ? "text" : "password"} placeholder="Repite tu contraseña" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} className={`h-10 sm:h-9 pr-10 text-[13px] ${confirmPass && confirmPass !== newPass ? "border-destructive" : ""}`} autoComplete="new-password" required />
-                        <button type="button" aria-label={showConfirmPass ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                          {showConfirmPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-                      {confirmPass && confirmPass !== newPass && <p className="text-xs text-destructive">Las contraseñas no coinciden.</p>}
-                    </div>
-                    {recoverMsg && (
-                      <div className="flex items-center gap-2 text-[12px] p-2.5 rounded" style={{ background: "oklch(0.98 0.015 27)", color: "var(--destructive)", border: "1px solid oklch(0.9 0.06 27)" }}>
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />{recoverMsg}
-                      </div>
-                    )}
-                    <Button type="submit" className="w-full h-10 sm:h-9 text-[13px] font-semibold text-white" style={{ background: "var(--primary)" }} disabled={savingPass}>
-                      {savingPass ? "Verificando..." : "Restablecer contraseña"}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold">
+                    Confirmar contraseña <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPass ? "text" : "password"}
+                      placeholder="Repite tu contraseña"
+                      value={confirmPass}
+                      onChange={(e) => setConfirmPass(e.target.value)}
+                      className={`h-11 pr-10 text-[14px] ${confirmPass && confirmPass !== newPass ? "border-destructive" : ""}`}
+                      autoComplete="new-password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      aria-label={showConfirmPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      onClick={() => setShowConfirmPass(!showConfirmPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {confirmPass && confirmPass !== newPass && (
+                    <p className="text-[12px] text-destructive">Las contraseñas no coinciden.</p>
+                  )}
+                </div>
+                {recoverMsg && (
+                  <div
+                    className="flex items-center gap-2.5 text-[13px] px-3.5 py-3 rounded-lg"
+                    style={{
+                      background: "oklch(0.97 0.015 27)",
+                      color: "var(--destructive)",
+                      border: "1px solid oklch(0.88 0.06 27)",
+                    }}
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0" />{recoverMsg}
+                  </div>
+                )}
+                <Button
+                  type="submit"
+                  className="w-full h-11 text-[14px] font-semibold cursor-pointer"
+                  disabled={savingPass}
+                >
+                  {savingPass ? "Verificando..." : "Restablecer contraseña"}
+                </Button>
+              </form>
             )}
           </div>
         </div>

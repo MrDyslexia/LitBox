@@ -13,7 +13,7 @@ import { useUser } from "@/contexts/user-context"
 import GestorStatsPanel from "@/components/gestor-stats-panel"
 import PayModal from "@/components/pay-modal"
 
-const GESTOR_COLOR = "oklch(0.52 0.18 290)"
+const GESTOR_COLOR = "oklch(0.36 0.08 252)"
 
 export default function GestorHomePage() {
   const { user } = useUser()
@@ -99,7 +99,7 @@ export default function GestorHomePage() {
             <p className="text-xs font-semibold text-muted-foreground">Por pagar</p>
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: "oklch(0.94 0.03 290)" }}
+              style={{ background: "oklch(0.94 0.02 252)" }}
             >
               <Clock className="w-4 h-4" style={{ color: GESTOR_COLOR }} />
             </div>
@@ -194,7 +194,7 @@ export default function GestorHomePage() {
                     <p className="text-sm font-bold text-foreground">{formatMonto(boleta.monto)}</p>
                     <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center"
-                      style={{ background: "oklch(0.94 0.03 290)" }}
+                      style={{ background: "oklch(0.94 0.02 252)" }}
                     >
                       <Wallet className="w-3.5 h-3.5" style={{ color: GESTOR_COLOR }} />
                     </div>

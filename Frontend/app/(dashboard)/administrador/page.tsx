@@ -23,10 +23,10 @@ import { useBoletasSync } from "@/hooks/useBoletasSync"
 import AdminStatsPanel from "@/components/admin-stats-panel"
 
 const roleColors: Record<ApiUser["rol"], string> = {
-  empleado: "oklch(0.58 0.14 162)",
-  auditor: "oklch(0.62 0.14 72)",
-  gestor: "oklch(0.52 0.18 290)",
-  administrador: "oklch(0.28 0.1 243)",
+  empleado: "oklch(0.52 0.21 28)",
+  auditor: "oklch(0.60 0.14 65)",
+  gestor: "oklch(0.36 0.08 252)",
+  administrador: "oklch(0.26 0.065 252)",
 }
 
 const roleLabels: Record<ApiUser["rol"], string> = {
@@ -113,7 +113,7 @@ export default function AdminHomePage() {
             value: displayStats.totalBoletas,
             icon: FileText,
             accentColor: "var(--primary)",
-            accentBg: "oklch(0.94 0.03 240)",
+            accentBg: "oklch(0.94 0.02 252)",
           },
           {
             label: "Por resolver",
@@ -232,7 +232,7 @@ export default function AdminHomePage() {
             <p className="text-xs font-semibold text-muted-foreground">Tiempo promedio</p>
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: "oklch(0.94 0.03 240)" }}
+              style={{ background: "oklch(0.94 0.02 252)" }}
             >
               <Timer className="w-4 h-4" style={{ color: "var(--primary)" }} />
             </div>
@@ -262,9 +262,9 @@ export default function AdminHomePage() {
             <p className="text-xs font-semibold text-muted-foreground">Boletas este mes</p>
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: "oklch(0.94 0.03 290)" }}
+              style={{ background: "oklch(0.94 0.02 252)" }}
             >
-              <CalendarDays className="w-4 h-4" style={{ color: "oklch(0.52 0.18 290)" }} />
+              <CalendarDays className="w-4 h-4" style={{ color: "var(--primary)" }} />
             </div>
           </div>
           <p className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">

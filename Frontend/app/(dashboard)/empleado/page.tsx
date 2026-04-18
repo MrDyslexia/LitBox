@@ -99,7 +99,7 @@ export default function EmpleadoHomePage() {
             value: displayStats.total,
             icon: FileText,
             accentColor: "var(--primary)",
-            accentBg: "oklch(0.94 0.03 240)",
+            accentBg: "oklch(0.94 0.02 252)",
           },
           {
             label: "Pendientes",

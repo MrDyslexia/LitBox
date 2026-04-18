@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Receipt, LogOut, X } from "lucide-react"
+import { FileText, LogOut, X } from "lucide-react"
 import { useUser } from "@/contexts/user-context"
 
 export interface NavItem {
@@ -39,25 +39,34 @@ function SidebarContent({
     >
       {/* Logo bar */}
       <div
-        className="flex items-center gap-2.5 px-5 py-4"
-        style={{ background: "oklch(0.13 0.04 243)", borderBottom: "1px solid var(--sidebar-border)" }}
+        className="flex items-center justify-between px-5 py-4"
+        style={{ background: "oklch(0.08 0.04 252)", borderBottom: "1px solid var(--sidebar-border)" }}
       >
-        <div
-          className="w-7 h-7 rounded flex items-center justify-center shrink-0"
-          style={{ background: "var(--accent)" }}
-        >
-          <Receipt className="w-4 h-4 text-white" />
-        </div>
-        <div className="leading-tight flex-1 min-w-0">
-          <span className="text-[13px] font-bold tracking-tight text-white">LitBox</span>
-          <p className="text-[9px] font-medium tracking-widest uppercase" style={{ color: "var(--accent)" }}>
-            Reembolsos
-          </p>
+        <div className="flex flex-col gap-2 min-w-0">
+          {/* ITransporte logo */}
+          <img
+            src="https://www.itransporte.cl/wp-content/uploads/2019/11/logo.png"
+            alt="ITransporte"
+            className="h-5 w-auto"
+            style={{ filter: "brightness(0) invert(1)", opacity: 0.9 }}
+          />
+          {/* LitBox product badge */}
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+              style={{ background: "#D94214" }}
+            >
+              <FileText className="w-2.5 h-2.5 text-white" />
+            </div>
+            <span className="text-[10px] font-semibold tracking-wide" style={{ color: "rgba(255,255,255,0.6)" }}>
+              LitBox · Reembolsos
+            </span>
+          </div>
         </div>
         {showClose && (
           <button
             onClick={onMobileClose}
-            className="text-white/60 hover:text-white transition-colors ml-1"
+            className="text-white/60 hover:text-white transition-colors ml-2 shrink-0"
             aria-label="Cerrar menú"
           >
             <X className="w-5 h-5" />
@@ -91,18 +100,18 @@ function SidebarContent({
             : (item.active ?? false)
 
           const activeStyle = { background: "var(--sidebar-accent)", color: "white", borderLeft: "3px solid var(--accent)" }
-          const inactiveStyle = { color: "oklch(0.65 0.02 230)", borderLeft: "3px solid transparent" }
+          const inactiveStyle = { color: "oklch(0.65 0.025 240)", borderLeft: "3px solid transparent" }
 
           const handleMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
             if (!isActive) {
               ;(e.currentTarget as HTMLElement).style.background = "var(--sidebar-accent)"
-              ;(e.currentTarget as HTMLElement).style.color = "oklch(0.88 0.01 230)"
+              ;(e.currentTarget as HTMLElement).style.color = "oklch(0.88 0.01 240)"
             }
           }
           const handleMouseLeave = (e: React.MouseEvent<HTMLElement>) => {
             if (!isActive) {
               ;(e.currentTarget as HTMLElement).style.background = "transparent"
-              ;(e.currentTarget as HTMLElement).style.color = "oklch(0.65 0.02 230)"
+              ;(e.currentTarget as HTMLElement).style.color = "oklch(0.65 0.025 240)"
             }
           }
 

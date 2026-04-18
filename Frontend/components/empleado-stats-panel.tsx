@@ -28,7 +28,7 @@ function PanelContent({ stats, loading, montoPendienteCobro }: Omit<Props, "mobi
       {/* Hero card — Tasa de aprobacion */}
       <div
         className="rounded-xl p-4"
-        style={{ background: "oklch(0.44 0.13 162)" }}
+        style={{ background: "oklch(0.26 0.065 252)" }}
       >
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold uppercase tracking-wide text-white/70">
@@ -204,7 +204,7 @@ export default function EmpleadoStatsPanel({ stats, loading, montoPendienteCobro
       style={{ borderColor: "var(--border)", maxHeight: "100vh" }}
     >
       <div className="flex items-center gap-2 px-1 pb-1">
-        <div className="w-1 h-4 rounded-full shrink-0" style={{ background: "oklch(0.44 0.13 162)" }} />
+        <div className="w-1 h-4 rounded-full shrink-0" style={{ background: "oklch(0.52 0.21 28)" }} />
         <h2 className="text-xs font-bold text-foreground">Estadísticas</h2>
       </div>
       <PanelContent stats={stats} loading={loading} montoPendienteCobro={montoPendienteCobro} />

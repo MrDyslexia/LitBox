@@ -138,9 +138,9 @@ export const STATUS_CONFIG: Record<
   },
   en_revision: {
     label: "En revisión",
-    color: "oklch(0.4 0.1 240)",
-    bg: "oklch(0.94 0.03 240)",
-    dot: "oklch(0.56 0.13 185)",
+    color: "oklch(0.36 0.08 252)",
+    bg: "oklch(0.94 0.02 252)",
+    dot: "oklch(0.48 0.09 252)",
   },
   aprobada: {
     label: "Aprobada",

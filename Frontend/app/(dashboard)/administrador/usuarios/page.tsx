@@ -38,10 +38,10 @@ const BANCOS_CHILE = [
 ]
 
 const roleColors: Record<ApiUser["rol"], string> = {
-  empleado: "oklch(0.58 0.14 162)",
-  auditor: "oklch(0.62 0.14 72)",
-  gestor: "oklch(0.52 0.18 290)",
-  administrador: "oklch(0.28 0.1 243)",
+  empleado: "oklch(0.52 0.21 28)",
+  auditor: "oklch(0.60 0.14 65)",
+  gestor: "oklch(0.36 0.08 252)",
+  administrador: "oklch(0.26 0.065 252)",
 }
 
 const roleLabels: Record<ApiUser["rol"], string> = {

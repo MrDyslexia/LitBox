@@ -102,16 +102,22 @@ export default function CompletarPerfil({ user, onComplete, onLogout }: Completa
       {/* Header */}
       <header
         className="flex items-center justify-between px-6 py-4 shrink-0"
-        style={{ background: "oklch(0.13 0.04 243)", borderBottom: "1px solid oklch(0.22 0.055 243)" }}
+        style={{ background: "oklch(0.08 0.04 252)", borderBottom: "1px solid oklch(0.14 0.04 252)" }}
       >
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-7 h-7 rounded flex items-center justify-center"
-            style={{ background: "var(--accent)" }}
-          >
-            <FileText className="w-3.5 h-3.5 text-white" />
+          <img
+            src="https://www.itransporte.cl/wp-content/uploads/2019/11/logo.png"
+            alt="ITransporte"
+            className="h-5 w-auto"
+            style={{ filter: "brightness(0) invert(1)", opacity: 0.9 }}
+          />
+          <div className="h-3.5 w-px" style={{ background: "rgba(255,255,255,0.2)" }} />
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ background: "#D94214" }}>
+              <FileText className="w-2.5 h-2.5 text-white" />
+            </div>
+            <span className="text-white text-[11px] font-semibold">LitBox</span>
           </div>
-          <span className="text-[14px] font-bold text-white tracking-tight">LitBox</span>
         </div>
         <button
           onClick={onLogout}

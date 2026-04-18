@@ -35,7 +35,7 @@ function PanelContent({ stats, loading, oldestUnpaidDays }: Omit<Props, "mobile"
       {/* Hero card — Por pagar (most critical metric for gestor) */}
       <div
         className="rounded-xl p-4"
-        style={{ background: "oklch(0.42 0.18 290)" }}
+        style={{ background: "oklch(0.22 0.06 252)" }}
       >
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold uppercase tracking-wide text-white/70">
@@ -82,8 +82,8 @@ function PanelContent({ stats, loading, oldestUnpaidDays }: Omit<Props, "mobile"
       <div
         className="rounded-xl p-3.5"
         style={{
-          background: "oklch(0.97 0.02 240 / 0.6)",
-          border: "1px solid oklch(0.92 0.03 240)",
+          background: "oklch(0.97 0.02 252 / 0.6)",
+          border: "1px solid oklch(0.92 0.03 252)",
         }}
       >
         <div className="flex items-start justify-between gap-2 mb-2">
@@ -92,7 +92,7 @@ function PanelContent({ stats, loading, oldestUnpaidDays }: Omit<Props, "mobile"
           </span>
           <div
             className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: "oklch(0.55 0.16 240 / 0.12)" }}
+            style={{ background: "oklch(0.26 0.065 252 / 0.12)" }}
           >
             <CalendarDays className="w-3.5 h-3.5" style={{ color: "var(--primary)" }} />
           </div>
@@ -190,7 +190,7 @@ export default function GestorStatsPanel({ stats, loading, oldestUnpaidDays, mob
       style={{ borderColor: "var(--border)", maxHeight: "100vh" }}
     >
       <div className="flex items-center gap-2 px-1 pb-1">
-        <div className="w-1 h-4 rounded-full shrink-0" style={{ background: "oklch(0.42 0.18 290)" }} />
+        <div className="w-1 h-4 rounded-full shrink-0" style={{ background: "oklch(0.26 0.065 252)" }} />
         <h2 className="text-xs font-bold text-foreground">Estadísticas</h2>
       </div>
       <PanelContent stats={stats} loading={loading} oldestUnpaidDays={oldestUnpaidDays} />

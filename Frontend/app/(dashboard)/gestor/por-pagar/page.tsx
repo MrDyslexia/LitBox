@@ -14,7 +14,7 @@ import PayModal from "@/components/pay-modal"
 import Pagination from "@/components/pagination"
 
 const PAGE_SIZE = 20
-const GESTOR_COLOR = "oklch(0.52 0.18 290)"
+const GESTOR_COLOR = "oklch(0.36 0.08 252)"
 
 export default function GestorPorPagarPage() {
   const [boletas, setBoletas] = useState<Boleta[]>([])
