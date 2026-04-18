@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
+import PageHeader from "@/components/page-header"
+import DataTableShell, { TableHeader, Th, Tr, Td } from "@/components/data-table-shell"
 import { usersApi } from "@/lib/api"
 import { formatRutInput, isValidRut } from "@/lib/rut"
 import type { ApiUser } from "@/lib/types"
@@ -210,28 +212,25 @@ export default function AdminUsuariosPage() {
           { label: "Gestión de usuarios" },
         ]}
       />
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Gestión de usuarios</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Administra los accesos y roles de todos los usuarios.
-          </p>
-        </div>
-        <Button
-          className="h-9 font-semibold text-white shrink-0"
-          style={{ background: "var(--primary)" }}
-          onClick={() => {
-            setShowNewUser(!showNewUser)
-            setUserError("")
-          }}
-        >
-          <UserPlus className="w-4 h-4 sm:mr-2" />
-          <span className="hidden sm:inline">Nuevo usuario</span>
-        </Button>
-      </div>
+      <PageHeader
+        title="Gestión de usuarios"
+        description="Administra los accesos y roles de todos los usuarios."
+        action={
+          <Button
+            className="h-9 font-semibold bg-accent text-accent-foreground hover:bg-accent/90"
+            onClick={() => {
+              setShowNewUser(!showNewUser)
+              setUserError("")
+            }}
+          >
+            <UserPlus className="w-4 h-4 sm:mr-2" aria-hidden />
+            <span className="hidden sm:inline">Nuevo usuario</span>
+          </Button>
+        }
+      />
 
       {showNewUser && (
-        <Card className="border shadow-none" style={{ borderColor: "var(--accent)" }}>
+        <Card className="border-2 border-accent/40 shadow-none bg-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Crear nuevo usuario</CardTitle>
           </CardHeader>
@@ -405,8 +404,7 @@ export default function AdminUsuariosPage() {
               <div className="flex gap-3">
                 <Button
                   type="submit"
-                  className="h-10 font-semibold text-white"
-                  style={{ background: "var(--primary)" }}
+                  className="h-10 font-semibold bg-accent text-accent-foreground hover:bg-accent/90"
                   disabled={savingUser}
                 >
                   {savingUser ? "Creando..." : "Crear usuario"}
@@ -430,7 +428,7 @@ export default function AdminUsuariosPage() {
 
       <div className="space-y-1">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden />
           <Input
             placeholder="Buscar usuario por nombre o correo..."
             value={searchUsers}
@@ -439,7 +437,9 @@ export default function AdminUsuariosPage() {
           />
         </div>
         {total > 0 && !loadingData && (
-          <p className="text-xs text-muted-foreground">{total} resultado(s)</p>
+          <p className="text-xs text-muted-foreground">
+            <span className="tabular-nums font-semibold text-foreground">{total}</span> resultado{total === 1 ? "" : "s"}
+          </p>
         )}
       </div>
 
@@ -447,8 +447,8 @@ export default function AdminUsuariosPage() {
       {selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedUser(null)} aria-hidden="true" />
-          <div className="relative z-10 w-full max-w-md bg-background rounded-xl shadow-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ background: "var(--secondary)", borderBottom: "1px solid var(--border)" }}>
+          <div className="relative z-10 w-full max-w-md bg-card rounded-xl shadow-2xl border border-border overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 bg-secondary/60 border-b border-border">
               <div className="flex items-center gap-3">
                 <UserAvatar
                   avatar={selectedUser.avatar}
@@ -487,13 +487,17 @@ export default function AdminUsuariosPage() {
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">Estado</p>
                   <span
-                    className="text-xs font-medium px-2 py-0.5 rounded-full"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
                     style={
                       selectedUser.activo
-                        ? { background: "oklch(0.95 0.04 145)", color: "oklch(0.38 0.12 145)" }
-                        : { background: "oklch(0.97 0.02 27)", color: "oklch(0.45 0.18 27)" }
+                        ? { background: "var(--success-bg)", color: "var(--success-fg)", borderColor: "var(--success-border)" }
+                        : { background: "var(--danger-bg)", color: "var(--danger-fg)", borderColor: "var(--danger-border)" }
                     }
                   >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: selectedUser.activo ? "var(--status-approved-dot)" : "var(--status-rejected-dot)" }}
+                    />
                     {selectedUser.activo ? "Activo" : "Inactivo"}
                   </span>
                 </div>
@@ -528,7 +532,7 @@ export default function AdminUsuariosPage() {
                 </div>
               )}
               {selectedUser.infoBancaria ? (
-                <div className="pt-2 mt-1 border-t" style={{ borderColor: "var(--border)" }}>
+                <div className="pt-2 mt-1 border-t border-border">
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
                     <Landmark className="w-3.5 h-3.5" />
                     Datos bancarios
@@ -549,7 +553,7 @@ export default function AdminUsuariosPage() {
                   </div>
                 </div>
               ) : (
-                <div className="pt-2 mt-1 border-t text-xs text-muted-foreground italic" style={{ borderColor: "var(--border)" }}>
+                <div className="pt-2 mt-1 border-t border-border text-xs text-muted-foreground italic">
                   Sin datos bancarios registrados.
                 </div>
               )}
@@ -558,94 +562,100 @@ export default function AdminUsuariosPage() {
         </div>
       )}
 
-      <Card className="border shadow-none overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: "var(--secondary)", borderBottom: "1px solid var(--border)" }}>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Usuario</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Correo</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rol</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Boletas</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Acc.</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loadingData ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">Cargando...</td>
-                </tr>
-              ) : apiUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    No se encontraron usuarios.
-                  </td>
-                </tr>
-              ) : (
-                apiUsers.map((u) => (
-                  <tr key={u._id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <UserAvatar
-                          avatar={u.avatar}
-                          avatarUrl={u.avatarUrl}
-                          name={u.nombre}
-                          size={28}
-                          roleColor={roleColors[u.rol]}
-                        />
-                        <span className="font-medium text-foreground truncate max-w-[100px] sm:max-w-none">{u.primerNombre} {u.primerApellido}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs hidden sm:table-cell">{u.email}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="text-[10px] font-semibold px-2 py-1 rounded-full text-white"
-                        style={{ background: roleColors[u.rol] }}
-                      >
-                        {roleLabels[u.rol]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-foreground hidden sm:table-cell">{u.totalBoletas ?? 0}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleToggleUser(u._id)}
-                        className="text-xs font-medium px-2 py-0.5 rounded-full transition-opacity hover:opacity-70 whitespace-nowrap"
-                        style={
-                          u.activo
-                            ? { background: "oklch(0.95 0.04 145)", color: "oklch(0.38 0.12 145)" }
-                            : { background: "oklch(0.97 0.02 27)", color: "oklch(0.45 0.18 27)" }
-                        }
-                        title="Click para cambiar estado"
-                      >
-                        {u.activo ? "Activo" : "Inactivo"}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <button
-                          className="p-1.5 rounded-md transition-colors hover:bg-accent/10 text-muted-foreground hover:text-accent"
-                          onClick={() => setSelectedUser(u)}
-                          aria-label="Ver detalles"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          className="p-1.5 rounded-md transition-colors hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleDeleteUser(u._id)}
-                          aria-label="Eliminar usuario"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <DataTableShell>
+        <TableHeader>
+          <tr>
+            <Th>Usuario</Th>
+            <Th className="hidden sm:table-cell">Correo</Th>
+            <Th>Rol</Th>
+            <Th className="hidden sm:table-cell" align="right">Boletas</Th>
+            <Th>Estado</Th>
+            <Th align="right">Acciones</Th>
+          </tr>
+        </TableHeader>
+        <tbody>
+          {loadingData ? (
+            <tr>
+              <td colSpan={6} className="px-4 py-16 text-center text-sm text-muted-foreground">Cargando...</td>
+            </tr>
+          ) : apiUsers.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="px-4 py-16 text-center text-sm text-muted-foreground">
+                No se encontraron usuarios.
+              </td>
+            </tr>
+          ) : (
+            apiUsers.map((u) => (
+              <Tr key={u._id}>
+                <Td>
+                  <div className="flex items-center gap-2.5">
+                    <UserAvatar
+                      avatar={u.avatar}
+                      avatarUrl={u.avatarUrl}
+                      name={u.nombre}
+                      size={28}
+                      roleColor={roleColors[u.rol]}
+                    />
+                    <span className="font-medium text-foreground truncate max-w-[140px] sm:max-w-none">
+                      {u.primerNombre} {u.primerApellido}
+                    </span>
+                  </div>
+                </Td>
+                <Td className="hidden sm:table-cell text-muted-foreground text-xs">{u.email}</Td>
+                <Td>
+                  <span
+                    className="inline-flex items-center text-[10px] font-semibold px-2 py-1 rounded-md uppercase tracking-wider border"
+                    style={{
+                      color: roleColors[u.rol],
+                      borderColor: roleColors[u.rol],
+                      background: "transparent",
+                    }}
+                  >
+                    {roleLabels[u.rol]}
+                  </span>
+                </Td>
+                <Td className="hidden sm:table-cell tabular-nums" align="right">{u.totalBoletas ?? 0}</Td>
+                <Td>
+                  <button
+                    onClick={() => handleToggleUser(u._id)}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full border transition-opacity hover:opacity-80 whitespace-nowrap"
+                    style={
+                      u.activo
+                        ? { background: "var(--success-bg)", color: "var(--success-fg)", borderColor: "var(--success-border)" }
+                        : { background: "var(--danger-bg)", color: "var(--danger-fg)", borderColor: "var(--danger-border)" }
+                    }
+                    title="Click para cambiar estado"
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: u.activo ? "var(--status-approved-dot)" : "var(--status-rejected-dot)" }}
+                    />
+                    {u.activo ? "Activo" : "Inactivo"}
+                  </button>
+                </Td>
+                <Td align="right">
+                  <div className="inline-flex items-center gap-1">
+                    <button
+                      className="p-1.5 rounded-md transition-colors hover:bg-accent/10 text-muted-foreground hover:text-accent"
+                      onClick={() => setSelectedUser(u)}
+                      aria-label="Ver detalles"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      className="p-1.5 rounded-md transition-colors hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDeleteUser(u._id)}
+                      aria-label="Eliminar usuario"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </Td>
+              </Tr>
+            ))
+          )}
+        </tbody>
+      </DataTableShell>
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
