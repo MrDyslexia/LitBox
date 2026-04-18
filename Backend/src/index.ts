@@ -8,7 +8,7 @@ import { authRoutes } from "./routes/auth";
 import { boletaRoutes } from "./routes/boletas";
 import { userRoutes } from "./routes/users";
 import { uploadRoutes } from "./routes/uploads";
-import { configRoutes } from "./routes/config";
+import { configRoutes, seedTiposIfEmpty } from "./routes/config";
 import { addClient, removeClient, clientCount } from "./ws/broadcaster";
 import { iniciarAtrasosJob } from "./jobs/atrasos.job";
 
@@ -159,6 +159,7 @@ const app = new Elysia()
 console.log(`✓ LitBox Backend corriendo en http://localhost:${env.port}`);
 console.log(`✓ Documentación API en http://localhost:${env.port}/docs`);
 
-iniciarAtrasosJob();
+iniciarAtrasosJob()
+await seedTiposIfEmpty()
 
 export type App = typeof app;

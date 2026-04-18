@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia"
 import { authMiddleware } from "../middleware/auth"
 import { User } from "../models/User"
 import { TipoGasto } from "../models/TipoGasto"
+import { Boleta } from "../models/Boleta"
 import { actualizarAvatar } from "../controllers/auth.controller"
 import sharp from "sharp"
 import { env } from "../config/env"
@@ -23,15 +24,13 @@ const TIPOS_INICIALES = [
   { nombre: "Otro",                   icono: "HelpCircle",    orden: 8 },
 ]
 
-async function seedTiposIfEmpty() {
+export async function seedTiposIfEmpty() {
   const count = await TipoGasto.countDocuments()
   if (count === 0) {
     await TipoGasto.insertMany(TIPOS_INICIALES)
+    console.log("✓ Tipos de gasto iniciales creados")
   }
 }
-
-// Ejecutar seed al arrancar
-await seedTiposIfEmpty()
 
 export const configRoutes = new Elysia({ prefix: "/config" })
   .use(authMiddleware)
@@ -108,7 +107,7 @@ export const configRoutes = new Elysia({ prefix: "/config" })
           const orden = maxOrden ? (maxOrden as any).orden + 1 : 1
           const tipo = await TipoGasto.create({ nombre: body.nombre.trim(), icono: body.icono, activo: true, orden })
           set.status = 201
-          return tipo
+          return tipo.toObject()
         },
         {
           body: t.Object({
@@ -134,7 +133,7 @@ export const configRoutes = new Elysia({ prefix: "/config" })
           if (body.activo !== undefined) tipo.activo = body.activo
           if (body.orden  !== undefined) tipo.orden  = body.orden
           await tipo.save()
-          return tipo
+          return tipo.toObject()
         },
         {
           body: t.Object({
@@ -153,6 +152,15 @@ export const configRoutes = new Elysia({ prefix: "/config" })
         async ({ params, set }) => {
           const tipo = await TipoGasto.findById(params.id)
           if (!tipo) throw Object.assign(new Error("Tipo no encontrado"), { status: 404 })
+
+          const count = await Boleta.countDocuments({ tipo: tipo.nombre })
+          if (count > 0) {
+            throw Object.assign(
+              new Error(`Este tipo tiene ${count} boleta${count !== 1 ? "s" : ""} asociada${count !== 1 ? "s" : ""}. Desactívalo en lugar de eliminarlo.`),
+              { status: 409, boletaCount: count }
+            )
+          }
+
           await tipo.deleteOne()
           set.status = 204
         },

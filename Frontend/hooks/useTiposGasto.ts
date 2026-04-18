@@ -37,11 +37,16 @@ export function useTiposGasto() {
 
   function invalidate() {
     cache = null
-    cachePromise = null
+    const p = tiposGastoApi.list()
+    cachePromise = p
     setLoading(true)
-    tiposGastoApi.list().then((data) => {
+    p.then((data) => {
       cache = data
+      cachePromise = null
       setTipos(data)
+      setLoading(false)
+    }).catch(() => {
+      cachePromise = null
       setLoading(false)
     })
   }

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Plus, Pencil, Trash2, Check, X, GripVertical } from "lucide-react"
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -52,46 +53,52 @@ export default function TiposGastoManager({ backHref, backLabel }: Props) {
   const [editTarget, setEditTarget] = useState<TipoGasto | null>(null)
   const [form, setForm]           = useState({ nombre: "", icono: "FileText" })
   const [saving, setSaving]       = useState(false)
-  const [error, setError]         = useState("")
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const openNew = () => {
     setEditTarget(null)
     setForm({ nombre: "", icono: "FileText" })
-    setError("")
+
     setShowForm(true)
   }
 
   const openEdit = (t: TipoGasto) => {
     setEditTarget(t)
     setForm({ nombre: t.nombre, icono: t.icono })
-    setError("")
+
     setShowForm(true)
   }
 
   const cancelForm = () => {
     setShowForm(false)
     setEditTarget(null)
-    setError("")
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.nombre.trim()) { setError("El nombre es requerido."); return }
-    if (!form.icono) { setError("Selecciona un ícono."); return }
+    if (!form.nombre.trim()) { toast.error("El nombre es requerido."); return }
+    if (!form.icono) { toast.error("Selecciona un ícono."); return }
     setSaving(true)
-    setError("")
     try {
       if (editTarget) {
         await tiposGastoApi.update(editTarget._id, { nombre: form.nombre.trim(), icono: form.icono })
+        toast.success(`Tipo "${form.nombre.trim()}" actualizado.`)
       } else {
         await tiposGastoApi.create({ nombre: form.nombre.trim(), icono: form.icono })
+        toast.success(`Tipo "${form.nombre.trim()}" creado.`)
       }
       invalidate()
       setShowForm(false)
       setEditTarget(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al guardar")
+      const msg = err instanceof Error ? err.message : "Error al guardar"
+      if ((err as any)?.status === 409 || msg.toLowerCase().includes("existe")) {
+        toast.error(`Ya existe un tipo con ese nombre.`, {
+          description: "Usa un nombre diferente o edita el existente.",
+        })
+      } else {
+        toast.error(msg)
+      }
     } finally {
       setSaving(false)
     }
@@ -100,20 +107,31 @@ export default function TiposGastoManager({ backHref, backLabel }: Props) {
   const handleToggleActivo = async (t: TipoGasto) => {
     try {
       await tiposGastoApi.update(t._id, { activo: !t.activo })
+      toast.success(`"${t.nombre}" ${!t.activo ? "activado" : "desactivado"}.`)
       invalidate()
     } catch (err) {
-      console.error(err)
+      toast.error(err instanceof Error ? err.message : "Error al actualizar")
     }
   }
 
   const handleDelete = async (t: TipoGasto) => {
-    if (!confirm(`¿Eliminar el tipo "${t.nombre}"? Las boletas existentes mantendrán este tipo.`)) return
+    if (!confirm(`¿Eliminar "${t.nombre}"? Solo es posible si no tiene boletas asociadas.`)) return
     setDeletingId(t._id)
     try {
       await tiposGastoApi.delete(t._id)
+      toast.success(`Tipo "${t.nombre}" eliminado.`)
       invalidate()
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al eliminar")
+      const msg = err instanceof Error ? err.message : "Error al eliminar"
+      const tieneBoletasMsg = msg.includes("boleta")
+      toast.error(tieneBoletasMsg ? `No se puede eliminar "${t.nombre}"` : msg, {
+        description: tieneBoletasMsg ? msg : undefined,
+        action: tieneBoletasMsg ? {
+          label: "Desactivar",
+          onClick: () => handleToggleActivo(t),
+        } : undefined,
+        duration: tieneBoletasMsg ? 8000 : 4000,
+      })
     } finally {
       setDeletingId(null)
     }
@@ -181,8 +199,6 @@ export default function TiposGastoManager({ backHref, backLabel }: Props) {
                 </div>
                 <IconPicker value={form.icono} onChange={(v) => setForm({ ...form, icono: v })} />
               </div>
-
-              {error && <p className="text-sm text-destructive">{error}</p>}
 
               <div className="flex items-center gap-2 pt-1">
                 <Button
