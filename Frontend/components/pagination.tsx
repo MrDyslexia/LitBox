@@ -1,12 +1,13 @@
 "use client"
 
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface PaginationProps {
-  page: number
-  totalPages: number
-  onPageChange: (page: number) => void
-  className?: string
+  readonly page: number
+  readonly totalPages: number
+  readonly onPageChange: (page: number) => void
+  readonly className?: string
 }
 
 export default function Pagination({ page, totalPages, onPageChange, className }: PaginationProps) {
@@ -16,52 +17,46 @@ export default function Pagination({ page, totalPages, onPageChange, className }
     if (totalPages <= 7) {
       return Array.from({ length: totalPages }, (_, i) => i + 1)
     }
-
-    const pages: (number | "…")[] = []
+    const pages: (number | "…")[] = [1]
     const left = Math.max(2, page - 1)
     const right = Math.min(totalPages - 1, page + 1)
-
-    pages.push(1)
-
     if (left > 2) pages.push("…")
-
-    for (let i = left; i <= right; i++) {
-      pages.push(i)
-    }
-
+    for (let i = left; i <= right; i++) pages.push(i)
     if (right < totalPages - 1) pages.push("…")
-
     pages.push(totalPages)
-
     return pages
   }
 
   const pages = getPageNumbers()
 
   return (
-    <div className={`flex items-center justify-center gap-1 py-2 ${className ?? ""}`}>
-      {/* Prev button */}
+    <nav
+      aria-label="Paginación"
+      className={cn(
+        "flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-2 py-1.5",
+        className,
+      )}
+    >
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="flex items-center justify-center w-8 h-8 rounded-md transition-colors hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed"
-        aria-label="Página anterior"
+        className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
       >
-        <ChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="w-3.5 h-3.5" aria-hidden />
+        <span className="hidden sm:inline">Anterior</span>
       </button>
 
-      {/* Mobile: only show "Página X de Y" */}
-      <span className="sm:hidden text-xs text-muted-foreground px-2">
-        Página {page} de {totalPages}
+      <span className="sm:hidden text-[11px] font-medium text-muted-foreground tabular-nums">
+        {page} / {totalPages}
       </span>
 
-      {/* Desktop: numbered buttons */}
-      <div className="hidden sm:flex items-center gap-1">
+      <div className="hidden sm:flex items-center gap-0.5">
         {pages.map((p, idx) =>
           p === "…" ? (
             <span
               key={`ellipsis-${idx}`}
               className="w-8 h-8 flex items-center justify-center text-xs text-muted-foreground"
+              aria-hidden
             >
               …
             </span>
@@ -69,29 +64,28 @@ export default function Pagination({ page, totalPages, onPageChange, className }
             <button
               key={p}
               onClick={() => onPageChange(p as number)}
-              className="w-8 h-8 rounded-md text-xs font-medium transition-colors hover:bg-muted/50"
-              style={
-                p === page
-                  ? { background: "var(--primary)", color: "white" }
-                  : undefined
-              }
               aria-current={p === page ? "page" : undefined}
+              className={cn(
+                "w-8 h-8 rounded-md text-xs font-semibold tabular-nums transition-colors",
+                p === page
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
             >
               {p}
             </button>
-          )
+          ),
         )}
       </div>
 
-      {/* Next button */}
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="flex items-center justify-center w-8 h-8 rounded-md transition-colors hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed"
-        aria-label="Página siguiente"
+        className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
       >
-        <ChevronRight className="w-4 h-4" />
+        <span className="hidden sm:inline">Siguiente</span>
+        <ChevronRight className="w-3.5 h-3.5" aria-hidden />
       </button>
-    </div>
+    </nav>
   )
 }

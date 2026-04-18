@@ -7,6 +7,10 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
+import PageHeader from "@/components/page-header"
+import KpiCard from "@/components/kpi-card"
+import SectionHeader from "@/components/section-header"
+import { DistributionBars, EstadoDonut, RadialProgress } from "@/components/charts"
 import { formatMonto } from "@/lib/mock-data"
 import { boletasApi, usersApi } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
@@ -32,13 +36,13 @@ export default function AdminEstadisticasPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  const aprobada   = stats?.aprobada ?? 0
-  const pagada     = stats?.pagada ?? 0
-  const rechazada  = stats?.rechazada ?? 0
-  const pendiente  = stats?.pendiente ?? 0
+  const aprobada    = stats?.aprobada ?? 0
+  const pagada      = stats?.pagada ?? 0
+  const rechazada   = stats?.rechazada ?? 0
+  const pendiente   = stats?.pendiente ?? 0
   const en_revision = stats?.en_revision ?? 0
-  const total      = stats?.total ?? 0
-  const atrasadas  = stats?.boletasAtrasadas ?? 0
+  const total       = stats?.total ?? 0
+  const atrasadas   = stats?.boletasAtrasadas ?? 0
   const montoAprobado = stats?.montoAprobado ?? 0
   const montoPagado   = stats?.montoPagado ?? 0
   const pagadasMes    = stats?.pagadasMes ?? 0
@@ -50,210 +54,206 @@ export default function AdminEstadisticasPage() {
   const resueltas = aprobada + pagada + rechazada
   const tasaAprobacion = resueltas > 0 ? Math.round(((aprobada + pagada) / resueltas) * 100) : null
   const expensePerUser = totalUsuarios > 0 ? montoPagado / totalUsuarios : 0
-  const boletasPorUser = totalUsuarios > 0 ? Math.round(total / totalUsuarios * 10) / 10 : 0
+  const boletasPorUser = totalUsuarios > 0 ? Math.round((total / totalUsuarios) * 10) / 10 : 0
   const paymentRate = (aprobada + pagada) > 0 ? Math.round((pagada / (aprobada + pagada)) * 100) : null
 
-  // Semáforos
-  const cycleColor =
-    tiempoEndToEnd == null  ? "var(--muted-foreground)"
-    : tiempoEndToEnd < 7   ? "oklch(0.58 0.14 162)"
-    : tiempoEndToEnd <= 14 ? "oklch(0.55 0.14 72)"
-                            : "oklch(0.55 0.22 27)"
+  const cycleTone: "default" | "success" | "warn" | "danger" =
+    tiempoEndToEnd == null ? "default"
+    : tiempoEndToEnd < 7 ? "success"
+    : tiempoEndToEnd <= 14 ? "warn"
+    : "danger"
   const cycleLabel =
-    tiempoEndToEnd == null  ? "Sin datos suficientes"
-    : tiempoEndToEnd < 7   ? "Ciclo eficiente (<7 días)"
+    tiempoEndToEnd == null ? "Sin datos suficientes"
+    : tiempoEndToEnd < 7 ? "Ciclo eficiente (<7 días)"
     : tiempoEndToEnd <= 14 ? "Ciclo moderado (7–14 días)"
-                            : "Ciclo lento (>14 días)"
+    : "Ciclo lento (>14 días)"
 
-  const top5Tipos = porTipo.slice(0, 5)
-  const maxTipo   = top5Tipos.length > 0 ? Math.max(...top5Tipos.map((t) => t.total)) : 1
+  const estadoData = [
+    { name: "Pendientes", value: pendiente, color: "var(--status-pending-dot)" },
+    { name: "En revisión", value: en_revision, color: "var(--status-review-dot)" },
+    { name: "Aprobadas", value: aprobada, color: "var(--status-approved-dot)" },
+    { name: "Pagadas", value: pagada, color: "var(--status-paid-dot)" },
+    { name: "Rechazadas", value: rechazada, color: "var(--status-rejected-dot)" },
+  ].filter((d) => d.value > 0)
 
-  const V = loading ? "—" : undefined
+  const top5Tipos = porTipo.slice(0, 5).map((t) => ({ label: t.tipo, value: t.total }))
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-4xl">
+    <div className="p-4 sm:p-6 space-y-8 max-w-5xl">
       <BreadcrumbNav items={[{ label: "Resumen general", href: "/administrador" }, { label: "Estadísticas" }]} />
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Estadísticas del sistema</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          KPIs operacionales globales del sistema de gestión de boletas.
-        </p>
-      </div>
 
-      {/* ── SECCIÓN 1: SALUD DEL SISTEMA ─────────────────────────── */}
+      <PageHeader
+        title="Estadísticas del sistema"
+        description="KPIs operacionales globales del sistema de gestión de boletas."
+      />
+
+      {/* Salud del sistema */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <Target className="w-3.5 h-3.5" />
-          Salud del sistema
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Tasa aprobación global */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--primary)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-white/70">Tasa de aprobación global</span>
-              <TrendingUp className="w-4 h-4 text-white/40" />
-            </div>
-            <p className="text-5xl font-black text-white tracking-tight">
-              {V ?? (tasaAprobacion != null ? `${tasaAprobacion}%` : "—")}
-            </p>
-            <div className="w-full h-2 rounded-full overflow-hidden mt-3" style={{ background: "rgba(255,255,255,0.2)" }}>
-              <div className="h-full rounded-full" style={{ width: `${tasaAprobacion ?? 0}%`, background: "white" }} />
-            </div>
-            <div className="mt-4 pt-4 border-t border-white/10 flex justify-between text-xs text-white/50">
-              <span>Aprobadas: {V ?? (aprobada + pagada)}</span>
-              <span>Rechazadas: {V ?? rechazada}</span>
-            </div>
-          </div>
-
-          {/* Alertas críticas */}
-          <div className="space-y-3">
-            <div
-              className="rounded-2xl p-4"
-              style={{ background: atrasadas > 0 ? "oklch(0.97 0.02 27)" : "oklch(0.97 0.01 162 / 0.4)", border: `1px solid ${atrasadas > 0 ? "oklch(0.88 0.06 27)" : "oklch(0.92 0.02 162)"}` }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-muted-foreground">Fuera de SLA</span>
-                <AlertTriangle className="w-4 h-4" style={{ color: atrasadas > 0 ? "oklch(0.55 0.22 27)" : "oklch(0.58 0.14 162)" }} />
-              </div>
-              <p className="text-3xl font-black tracking-tight" style={{ color: atrasadas > 0 ? "oklch(0.45 0.22 27)" : "var(--foreground)" }}>
-                {V ?? atrasadas}
+        <SectionHeader icon={Target} label="Salud del sistema" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+          <Card className="border border-border shadow-none py-0 lg:col-span-1">
+            <CardContent className="p-5 flex flex-col items-center gap-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground self-start">
+                Tasa de aprobación global
               </p>
-              <p className="text-xs mt-1" style={{ color: atrasadas > 0 ? "oklch(0.55 0.18 27)" : "oklch(0.58 0.14 162)" }}>
-                {loading ? "" : atrasadas === 0 ? "Sistema al día" : "+3 días sin resolver"}
-              </p>
-            </div>
-            <div className="rounded-2xl p-4" style={{ background: "oklch(0.97 0.03 72)", border: "1px solid oklch(0.88 0.07 72)" }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-muted-foreground">Backlog pendiente</span>
-                <Zap className="w-4 h-4" style={{ color: "oklch(0.55 0.14 72)" }} />
-              </div>
-              <p className="text-3xl font-black text-foreground tracking-tight">{V ?? (pendiente + en_revision)}</p>
-              <p className="text-xs mt-1" style={{ color: "oklch(0.52 0.1 72)" }}>
-                {loading ? "" : `${pendiente} pendiente · ${en_revision} en revisión`}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECCIÓN 2: EFICIENCIA OPERACIONAL ───────────────────── */}
-      <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <Timer className="w-3.5 h-3.5" />
-          Eficiencia operacional
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Cycle E2E */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ciclo E2E (creación → pago)</span>
-              <Timer className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <p className="text-5xl font-black text-foreground tracking-tight">
-              {V ?? (tiempoEndToEnd != null ? `${tiempoEndToEnd.toFixed(1)}d` : "—")}
-            </p>
-            <p className="text-sm mt-2 font-semibold" style={{ color: cycleColor }}>
-              {loading ? "" : cycleLabel}
-            </p>
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground">Benchmark: &lt;7 días ideal, &lt;14 días aceptable</p>
-            </div>
-          </div>
-
-          {/* Tiempo resolución auditoría */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tiempo de revisión</span>
-              <Timer className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <p className="text-5xl font-black text-foreground tracking-tight">
-              {V ?? (tiempoResolucion != null ? `${tiempoResolucion.toFixed(1)}d` : "—")}
-            </p>
-            <p className="text-sm mt-2 text-muted-foreground">
-              {loading ? "" : "creación → decisión auditoría"}
-            </p>
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground">Benchmark: &lt;2 días ideal, &lt;3 días aceptable</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: "Payment Rate", value: V ?? (paymentRate != null ? `${paymentRate}%` : "—"), sub: "boletas pagadas vs aprobadas", icon: CheckCircle, color: "oklch(0.58 0.14 162)", bg: "oklch(0.95 0.04 162)" },
-            { label: "Gasto / empleado", value: V ?? (totalUsuarios > 0 ? formatMonto(expensePerUser) : "—"), sub: "promedio histórico", icon: Users, color: "var(--primary)", bg: "oklch(0.94 0.02 252)" },
-            { label: "Boletas / empleado", value: V ?? (totalUsuarios > 0 ? boletasPorUser : "—"), sub: "promedio total", icon: XCircle, color: "var(--muted-foreground)", bg: "var(--muted)" },
-            { label: "Pagadas este mes", value: V ?? pagadasMes, sub: V ?? formatMonto(montoPagadoMes), icon: DollarSign, color: "oklch(0.58 0.14 162)", bg: "oklch(0.95 0.04 162)" },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl p-4" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-muted-foreground leading-tight">{s.label}</p>
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: s.bg }}>
-                  <s.icon className="w-3.5 h-3.5" style={{ color: s.color }} />
+              <RadialProgress
+                value={tasaAprobacion ?? 0}
+                size={200}
+                color="var(--chart-1)"
+              >
+                <span className="text-4xl font-black text-foreground tabular-nums tracking-tight">
+                  {loading ? "—" : tasaAprobacion != null ? `${tasaAprobacion}%` : "—"}
+                </span>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                  {loading ? "" : `${aprobada + pagada} / ${resueltas}`}
+                </span>
+              </RadialProgress>
+              <div className="w-full grid grid-cols-2 gap-3 pt-3 border-t border-border text-center">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Aprobadas</p>
+                  <p className="text-sm font-bold text-foreground tabular-nums">{loading ? "—" : aprobada + pagada}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Rechazadas</p>
+                  <p className="text-sm font-bold text-foreground tabular-nums">{loading ? "—" : rechazada}</p>
                 </div>
               </div>
-              <p className="text-lg font-black text-foreground tracking-tight leading-tight">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{s.sub}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── SECCIÓN 3: FLUJO FINANCIERO ──────────────────────────── */}
-      <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <DollarSign className="w-3.5 h-3.5" />
-          Flujo financiero
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="rounded-2xl p-5" style={{ background: "var(--primary)" }}>
-            <span className="text-xs font-semibold uppercase tracking-wide text-white/70">Total pagado (histórico)</span>
-            <p className="text-4xl font-black text-white tracking-tight mt-2">{V ?? formatMonto(montoPagado)}</p>
-            <p className="text-xs text-white/50 mt-2">{V ?? pagada} boletas pagadas</p>
-          </div>
-          <div className="rounded-2xl p-5" style={{ background: "oklch(0.97 0.03 72)", border: "1px solid oklch(0.88 0.07 72)" }}>
-            <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.45 0.1 72)" }}>Cash Exposure actual</span>
-            <p className="text-4xl font-black tracking-tight mt-2" style={{ color: "oklch(0.32 0.12 72)" }}>{V ?? formatMonto(montoAprobado)}</p>
-            <p className="text-xs mt-2" style={{ color: "oklch(0.52 0.1 72)" }}>{V ?? aprobada} boletas aprobadas sin pagar</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECCIÓN 4: DISTRIBUCIÓN POR TIPO ────────────────────── */}
-      {!loading && top5Tipos.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <BarChart3 className="w-3.5 h-3.5" />
-            Distribución por categoría
-          </h2>
-          <Card className="border shadow-none">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-muted-foreground">Top categorías de gasto (global)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {top5Tipos.map(({ tipo, total: t }, i) => {
-                const barColors = ["var(--primary)", "oklch(0.52 0.21 28)", "oklch(0.58 0.14 162)", "oklch(0.55 0.14 72)", "oklch(0.55 0.22 27)"]
-                return (
-                  <div key={tipo}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[10px] font-mono font-bold text-muted-foreground shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                        <span className="text-sm font-medium text-foreground truncate">{tipo}</span>
-                      </div>
-                      <span className="text-sm font-black text-foreground shrink-0 ml-3">{t}</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.round((t / maxTipo) * 100)}%`, background: barColors[i] ?? "var(--primary)" }} />
-                    </div>
-                  </div>
-                )
-              })}
             </CardContent>
           </Card>
-        </section>
-      )}
+
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <KpiCard
+              tone={atrasadas > 0 ? "danger" : "success"}
+              size="md"
+              label="Fuera de SLA"
+              icon={AlertTriangle}
+              value={loading ? "—" : atrasadas}
+              sub={loading ? "" : atrasadas === 0 ? "Sistema al día" : "+3 días sin resolver"}
+            />
+            <KpiCard
+              tone="warn"
+              size="md"
+              label="Backlog pendiente"
+              icon={Zap}
+              value={loading ? "—" : pendiente + en_revision}
+              sub={loading ? "" : `${pendiente} pendiente · ${en_revision} en revisión`}
+            />
+            <KpiCard
+              tone="primary" size="md" label="Total boletas" icon={BarChart3}
+              value={loading ? "—" : total} sub="todas las boletas históricas"
+            />
+            <KpiCard
+              tone="success" size="md" label="Payment Rate" icon={CheckCircle}
+              value={loading ? "—" : paymentRate != null ? `${paymentRate}%` : "—"}
+              sub="boletas pagadas vs aprobadas"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Eficiencia operacional */}
+      <section className="space-y-3">
+        <SectionHeader icon={Timer} label="Eficiencia operacional" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <KpiCard
+            tone={cycleTone}
+            size="lg"
+            label="Ciclo E2E (creación → pago)"
+            icon={Timer}
+            value={loading ? "—" : tiempoEndToEnd != null ? `${tiempoEndToEnd.toFixed(1)}d` : "—"}
+            sub={loading ? "" : cycleLabel}
+            footer={<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Benchmark: &lt;7 días ideal · &lt;14 días aceptable</p>}
+          />
+          <KpiCard
+            tone="muted"
+            size="lg"
+            label="Tiempo de revisión"
+            icon={Timer}
+            value={loading ? "—" : tiempoResolucion != null ? `${tiempoResolucion.toFixed(1)}d` : "—"}
+            sub={loading ? "" : "creación → decisión auditoría"}
+            footer={<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Benchmark: &lt;2 días ideal · &lt;3 días aceptable</p>}
+          />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <KpiCard
+            tone="muted" size="md" label="Gasto / empleado" icon={Users}
+            value={loading ? "—" : totalUsuarios > 0 ? formatMonto(expensePerUser) : "—"}
+            sub="promedio histórico"
+          />
+          <KpiCard
+            tone="muted" size="md" label="Boletas / empleado" icon={XCircle}
+            value={loading ? "—" : totalUsuarios > 0 ? boletasPorUser : "—"}
+            sub="promedio total"
+          />
+          <KpiCard
+            tone="success" size="md" label="Pagadas / mes" icon={CheckCircle}
+            value={loading ? "—" : pagadasMes}
+            sub={loading ? "" : formatMonto(montoPagadoMes)}
+          />
+          <KpiCard
+            tone="muted" size="md" label="Tasa aprobación" icon={TrendingUp}
+            value={loading ? "—" : tasaAprobacion != null ? `${tasaAprobacion}%` : "—"}
+            sub={`${resueltas} resueltas`}
+          />
+        </div>
+      </section>
+
+      {/* Flujo financiero */}
+      <section className="space-y-3">
+        <SectionHeader icon={DollarSign} label="Flujo financiero" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <KpiCard
+            tone="primary" size="lg" label="Total pagado (histórico)" icon={CheckCircle}
+            value={loading ? "—" : formatMonto(montoPagado)}
+            sub={loading ? "" : `${pagada} boletas pagadas`}
+          />
+          <KpiCard
+            tone="warn" size="lg" label="Cash Exposure actual" icon={AlertTriangle}
+            value={loading ? "—" : formatMonto(montoAprobado)}
+            sub={loading ? "" : `${aprobada} boletas aprobadas sin pagar`}
+          />
+        </div>
+      </section>
+
+      {/* Distribución */}
+      <section className="space-y-3">
+        <SectionHeader icon={BarChart3} label="Distribución" />
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4">
+          <Card className="border border-border shadow-none py-0 lg:col-span-3">
+            <CardHeader className="px-5 py-3 border-b border-border">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                <BarChart3 className="w-3.5 h-3.5" />
+                Top categorías de gasto (global)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-5">
+              {loading ? (
+                <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">Cargando...</div>
+              ) : top5Tipos.length === 0 ? (
+                <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">Sin datos</div>
+              ) : (
+                <DistributionBars data={top5Tipos} />
+              )}
+            </CardContent>
+          </Card>
+          <Card className="border border-border shadow-none py-0 lg:col-span-2">
+            <CardHeader className="px-5 py-3 border-b border-border">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                Distribución por estado
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-5 flex items-center justify-center min-h-[240px]">
+              {loading ? (
+                <span className="text-sm text-muted-foreground">Cargando...</span>
+              ) : estadoData.length === 0 ? (
+                <span className="text-sm text-muted-foreground">Sin datos</span>
+              ) : (
+                <EstadoDonut data={estadoData} centerLabel="Total" centerValue={total} />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
     </div>
   )
 }

@@ -7,6 +7,10 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
+import PageHeader from "@/components/page-header"
+import KpiCard from "@/components/kpi-card"
+import SectionHeader from "@/components/section-header"
+import { DistributionBars, RadialProgress } from "@/components/charts"
 import { formatMonto } from "@/lib/mock-data"
 import { boletasApi } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
@@ -41,182 +45,127 @@ export default function EmpleadoEstadisticasPage() {
   const tasaAprobacion = resueltas > 0 ? Math.round(((aprobadas + pagadas) / resueltas) * 100) : null
   const tasaRechazo    = resueltas > 0 ? Math.round((rechazadas / resueltas) * 100) : null
 
-  const slaColor =
-    tiempoAvg == null  ? "var(--muted-foreground)"
-    : tiempoAvg < 3   ? "oklch(0.58 0.14 162)"
-    : tiempoAvg <= 5  ? "oklch(0.55 0.14 72)"
-                      : "oklch(0.55 0.22 27)"
+  const slaTone: "default" | "success" | "warn" | "danger" =
+    tiempoAvg == null ? "default"
+    : tiempoAvg < 3 ? "success"
+    : tiempoAvg <= 5 ? "warn"
+    : "danger"
   const slaLabel =
-    tiempoAvg == null  ? "Sin datos suficientes"
-    : tiempoAvg < 3   ? "Respuesta rápida (<3 días)"
-    : tiempoAvg <= 5  ? "Respuesta normal (3–5 días)"
-                      : "Respuesta lenta (>5 días)"
+    tiempoAvg == null ? "Sin datos suficientes"
+    : tiempoAvg < 3 ? "Respuesta rápida (<3 días)"
+    : tiempoAvg <= 5 ? "Respuesta normal (3–5 días)"
+    : "Respuesta lenta (>5 días)"
 
-  const top5Tipos = porTipo.slice(0, 5)
-  const maxTipo   = top5Tipos.length > 0 ? Math.max(...top5Tipos.map((t) => t.total)) : 1
-  const V = loading ? "—" : undefined
+  const top5Tipos = porTipo.slice(0, 5).map((t) => ({ label: t.tipo, value: t.total }))
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-4xl">
+    <div className="p-4 sm:p-6 space-y-8 max-w-5xl">
       <BreadcrumbNav items={[{ label: "Inicio", href: "/empleado" }, { label: "Estadísticas" }]} />
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Mis estadísticas</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Rendimiento personal de reembolsos y calidad de submissions.
-        </p>
-      </div>
 
-      {/* ── SECCIÓN 1: MI DINERO ─────────────────────────────────── */}
+      <PageHeader
+        title="Mis estadísticas"
+        description="Rendimiento personal de reembolsos y calidad de submissions."
+      />
+
+      {/* Mi dinero */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <Wallet className="w-3.5 h-3.5" />
-          Mi dinero
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Hero — Total recibido */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--primary)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-white/70">Total recibido</span>
-              <CheckCircle className="w-4 h-4 text-white/40" />
-            </div>
-            <p className="text-5xl font-black text-white tracking-tight">
-              {V ?? formatMonto(montoPagado)}
-            </p>
-            <p className="text-sm text-white/60 mt-2">reembolsado históricamente</p>
-            <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-              <span className="text-xs text-white/50">Boletas pagadas</span>
-              <span className="text-sm font-bold text-white">{V ?? pagadas}</span>
-            </div>
-          </div>
-
-          {/* Hero — Por cobrar */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              background: pipeline > 0 ? "oklch(0.97 0.03 72)" : "var(--secondary)",
-              border: `1px solid ${pipeline > 0 ? "oklch(0.88 0.07 72)" : "var(--border)"}`,
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Por cobrar</span>
-              <Wallet className="w-4 h-4" style={{ color: pipeline > 0 ? "oklch(0.55 0.14 72)" : "var(--muted-foreground)" }} />
-            </div>
-            <p className="text-5xl font-black text-foreground tracking-tight">
-              {V ?? formatMonto(pipeline)}
-            </p>
-            <p className="text-sm mt-2" style={{ color: pipeline > 0 ? "oklch(0.52 0.1 72)" : "var(--muted-foreground)" }}>
-              {loading ? "" : pipeline === 0 ? "Todo al día" : "aprobado, esperando pago"}
-            </p>
-            <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Este mes</span>
-              <span className="text-sm font-bold text-foreground">{V ?? formatMonto(montoMes)}</span>
-            </div>
-          </div>
+        <SectionHeader icon={Wallet} label="Mi dinero" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <KpiCard
+            tone="primary" size="lg" label="Total recibido" icon={CheckCircle}
+            value={loading ? "—" : formatMonto(montoPagado)}
+            sub="reembolsado históricamente"
+            footer={
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-[0.14em] text-primary-foreground/60">Boletas pagadas</span>
+                <span className="text-sm font-bold tabular-nums">{loading ? "—" : pagadas}</span>
+              </div>
+            }
+          />
+          <KpiCard
+            tone={pipeline > 0 ? "warn" : "muted"}
+            size="lg" label="Por cobrar" icon={Wallet}
+            value={loading ? "—" : formatMonto(pipeline)}
+            sub={loading ? "" : pipeline === 0 ? "Todo al día" : "aprobado, esperando pago"}
+            footer={
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Este mes</span>
+                <span className="text-sm font-bold text-foreground tabular-nums">{loading ? "—" : formatMonto(montoMes)}</span>
+              </div>
+            }
+          />
         </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <KpiCard tone="muted" size="md" label="Total enviadas" icon={FileText}
+            value={loading ? "—" : total} sub={`${boletasMes} este mes`} />
+          <KpiCard tone="success" size="md" label="Aprobadas" icon={CheckCircle}
+            value={loading ? "—" : aprobadas + pagadas} sub="incluye pagadas" />
+          <KpiCard tone="danger" size="md" label="Rechazadas" icon={XCircle}
+            value={loading ? "—" : rechazadas} sub={tasaRechazo != null ? `${tasaRechazo}% del total` : "—"} />
+          <KpiCard tone="warn" size="md" label="Pendientes" icon={Clock}
+            value={loading ? "—" : pendientes} sub="en revisión" />
+        </div>
+      </section>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: "Total enviadas", value: V ?? total, sub: `${boletasMes} este mes`, icon: FileText, color: "var(--primary)", bg: "oklch(0.94 0.02 252)" },
-            { label: "Aprobadas", value: V ?? (aprobadas + pagadas), sub: "incluye pagadas", icon: CheckCircle, color: "oklch(0.58 0.14 162)", bg: "oklch(0.95 0.04 162)" },
-            { label: "Rechazadas", value: V ?? rechazadas, sub: tasaRechazo != null ? `${tasaRechazo}% del total` : "—", icon: XCircle, color: "oklch(0.55 0.22 27)", bg: "oklch(0.97 0.02 27)" },
-            { label: "Pendientes", value: V ?? pendientes, sub: "en revisión", icon: Clock, color: "oklch(0.55 0.14 72)", bg: "oklch(0.97 0.03 72)" },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl p-4" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-muted-foreground leading-tight">{s.label}</p>
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: s.bg }}>
-                  <s.icon className="w-3.5 h-3.5" style={{ color: s.color }} />
+      {/* Rendimiento */}
+      <section className="space-y-3">
+        <SectionHeader icon={Target} label="Mi rendimiento" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <Card className="border border-border shadow-none py-0">
+            <CardContent className="p-5 flex flex-col items-center gap-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground self-start">
+                Tasa de aprobación
+              </p>
+              <RadialProgress
+                value={tasaAprobacion ?? 0}
+                size={180}
+                color="var(--chart-3)"
+              >
+                <span className="text-4xl font-black text-foreground tabular-nums tracking-tight">
+                  {loading ? "—" : tasaAprobacion != null ? `${tasaAprobacion}%` : "—"}
+                </span>
+              </RadialProgress>
+              <div className="w-full grid grid-cols-2 gap-3 pt-3 border-t border-border text-center">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Aprobadas</p>
+                  <p className="text-sm font-bold text-foreground tabular-nums">{loading ? "—" : aprobadas + pagadas}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Rechazadas</p>
+                  <p className="text-sm font-bold text-foreground tabular-nums">{loading ? "—" : rechazadas}</p>
                 </div>
               </div>
-              <p className="text-2xl font-black text-foreground tracking-tight">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{s.sub}</p>
-            </div>
-          ))}
+            </CardContent>
+          </Card>
+
+          <KpiCard
+            tone={slaTone} size="lg" label="Tiempo de respuesta" icon={Timer}
+            value={loading ? "—" : tiempoAvg != null ? `${tiempoAvg.toFixed(1)}d` : "—"}
+            sub={loading ? "" : slaLabel}
+            footer={<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Días desde envío hasta decisión del auditor</p>}
+          />
         </div>
       </section>
 
-      {/* ── SECCIÓN 2: MI RENDIMIENTO ────────────────────────────── */}
-      <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-          <Target className="w-3.5 h-3.5" />
-          Mi rendimiento
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Tasa de aprobación */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tasa de aprobación</span>
-              <TrendingUp className="w-4 h-4" style={{ color: "oklch(0.58 0.14 162)" }} />
-            </div>
-            <p className="text-5xl font-black text-foreground tracking-tight">
-              {V ?? (tasaAprobacion != null ? `${tasaAprobacion}%` : "—")}
-            </p>
-            <div className="w-full h-2 rounded-full overflow-hidden mt-3" style={{ background: "var(--muted)" }}>
-              <div className="h-full rounded-full transition-all" style={{ width: `${tasaAprobacion ?? 0}%`, background: "oklch(0.58 0.14 162)" }} />
-            </div>
-            <div className="mt-3 pt-3 border-t border-border flex justify-between text-xs text-muted-foreground">
-              <span>Aprobadas: {V ?? (aprobadas + pagadas)}</span>
-              <span>Rechazadas: {V ?? rechazadas}</span>
-            </div>
-          </div>
-
-          {/* Tiempo promedio */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tiempo de respuesta</span>
-              <Timer className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <p className="text-5xl font-black text-foreground tracking-tight">
-              {V ?? (tiempoAvg != null ? `${tiempoAvg.toFixed(1)}d` : "—")}
-            </p>
-            <p className="text-sm mt-2 font-semibold" style={{ color: slaColor }}>
-              {loading ? "" : slaLabel}
-            </p>
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground">Días desde envío hasta decisión del auditor</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECCIÓN 3: MIS GASTOS POR TIPO ──────────────────────── */}
+      {/* Distribución */}
       {!loading && top5Tipos.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <BarChart3 className="w-3.5 h-3.5" />
-            Mis gastos por categoría
-          </h2>
-          <Card className="border shadow-none">
-            <CardHeader className="pb-2">
+          <SectionHeader icon={BarChart3} label="Mis gastos por categoría" />
+          <Card className="border border-border shadow-none py-0">
+            <CardHeader className="px-5 py-3 border-b border-border">
               <CardTitle className="text-sm font-semibold text-muted-foreground">
                 Distribución de boletas enviadas
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {top5Tipos.map(({ tipo, total: t }, i) => {
-                const barColors = ["var(--primary)", "oklch(0.52 0.21 28)", "oklch(0.58 0.14 162)", "oklch(0.55 0.14 72)", "oklch(0.55 0.22 27)"]
-                return (
-                  <div key={tipo}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[10px] font-mono font-bold text-muted-foreground shrink-0">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span className="text-sm font-medium text-foreground truncate">{tipo}</span>
-                      </div>
-                      <span className="text-sm font-black text-foreground shrink-0 ml-3">{t}</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.round((t / maxTipo) * 100)}%`, background: barColors[i] ?? "var(--primary)" }} />
-                    </div>
-                  </div>
-                )
-              })}
+            <CardContent className="p-4 sm:p-5">
+              <DistributionBars data={top5Tipos} />
             </CardContent>
           </Card>
         </section>
+      )}
+
+      {loading && (
+        <div className="text-center py-8 text-sm text-muted-foreground">Cargando...</div>
       )}
     </div>
   )
