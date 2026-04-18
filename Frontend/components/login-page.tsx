@@ -1,11 +1,255 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, Eye, EyeOff, FileText, CheckCircle, ArrowLeft } from "lucide-react"
 import { auth } from "@/lib/api"
+
+// ── Hero slides ───────────────────────────────────────────────────────────────
+// Imágenes de Santiago de Chile — Wikimedia Commons (CC) y Unsplash
+
+const SLIDE_DURATION = 7000
+
+const SLIDES = [
+  {
+    image: "/santiago.jpg",
+    imagePosition: "center 30%",
+    badge: "Plataforma Corporativa",
+    title: ["Gestión de boletas", "centralizada."],
+    description: "Centraliza, gestiona y haz seguimiento de todos los gastos corporativos en un solo lugar.",
+    items: [
+      { num: "01", title: "Subida de comprobantes", desc: "Los empleados fotografían y suben sus boletas fácilmente." },
+      { num: "02", title: "Auditoría centralizada", desc: "Los auditores revisan, aprueban o rechazan cada solicitud." },
+      { num: "03", title: "Control total", desc: "El administrador tiene visibilidad completa del sistema." },
+    ],
+  },
+  {
+    image: "/santiago2.webp",
+    imagePosition: "center center",
+    badge: "Quiénes somos",
+    title: ["Consultoría vial y", "de transporte urbano."],
+    description: "Somos un equipo de profesionales con más de 12 años desarrollando proyectos de ingeniería vial, ambiental y transporte urbano en Chile, Perú y Colombia.",
+    items: [
+      { num: "+500", title: "Proyectos aprobados", desc: "Proyectos urbanos y viales aprobados exitosamente." },
+      { num: "+1.000", title: "Estudios de impacto", desc: "Estudios EISTU, IVB e IMIV aprobados ante organismos." },
+      { num: "+12", title: "Años de experiencia", desc: "Operando desde 2008 con presencia en 3 países." },
+    ],
+  },
+  {
+    image: "/santiago.jpg",
+    imagePosition: "center 60%",
+    badge: "Nuestra Visión",
+    title: ["Ciudades más amables,", "movilidad sustentable."],
+    description: "«Soñamos con barrios y comunas más amables, con la infraestructura necesaria para permitir la convivencia vial entre distintos modos de transporte.»",
+    items: [
+      { num: "01", title: "Área Vial", desc: "Optimización de sistemas de transporte y planes de movilidad urbana." },
+      { num: "02", title: "Área Ambiental", desc: "Estudios que resguardan el ciclo de vida y las normativas vigentes." },
+      { num: "03", title: "Área Estratégica", desc: "Asesoría IMIV y Ley de Aportes al Espacio Público." },
+    ],
+  },
+]
+
+function HeroPanel() {
+  const [current, setCurrent] = useState(0)
+  const [fading, setFading] = useState(false)
+  const [progress, setProgress] = useState(0)
+
+  useEffect(() => {
+    setProgress(0)
+    const start = Date.now()
+    const raf = setInterval(() => {
+      const elapsed = Date.now() - start
+      setProgress(Math.min((elapsed / SLIDE_DURATION) * 100, 100))
+    }, 50)
+    return () => clearInterval(raf)
+  }, [current])
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setFading(true)
+      setTimeout(() => {
+        setCurrent((p) => (p + 1) % SLIDES.length)
+        setFading(false)
+      }, 500)
+    }, SLIDE_DURATION)
+    return () => clearInterval(t)
+  }, [])
+
+  const goTo = (i: number) => {
+    if (i === current || fading) return
+    setFading(true)
+    setTimeout(() => { setCurrent(i); setFading(false) }, 500)
+  }
+
+  const slide = SLIDES[current]
+
+  return (
+    <div
+      className="hidden xl:flex flex-col w-[45%] shrink-0 relative overflow-hidden"
+      style={{ background: "#050c1a" }}
+    >
+      {/* Background images — crossfade */}
+      {SLIDES.map((s, i) => (
+        <div
+          key={i}
+          className="absolute inset-0"
+          style={{ opacity: i === current ? 1 : 0, transition: "opacity 800ms ease-in-out" }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={s.image} alt="" draggable={false} className="w-full h-full object-cover select-none" style={{ objectPosition: s.imagePosition }} />
+          {/* Left-heavy overlay: dark on left for text, lighter on right to show city */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(100deg, rgba(5,12,26,0.96) 0%, rgba(6,14,30,0.88) 35%, rgba(8,18,40,0.72) 60%, rgba(10,22,50,0.45) 100%)",
+            }}
+          />
+          {/* Bottom vignette */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-48 pointer-events-none"
+            style={{ background: "linear-gradient(to top, rgba(5,12,26,0.80) 0%, transparent 100%)" }}
+          />
+        </div>
+      ))}
+
+      {/* Accent glow top-right */}
+      <div
+        className="absolute top-0 right-0 w-80 h-80 pointer-events-none"
+        style={{ background: "radial-gradient(circle at 85% 15%, rgba(217,66,20,0.16) 0%, transparent 60%)" }}
+      />
+
+      {/* Brand bar */}
+      <div
+        className="relative z-10 flex items-center justify-between px-10 py-5 shrink-0"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://www.itransporte.cl/wp-content/uploads/2019/11/logo.png"
+          alt="ITransporte"
+          className="h-7 w-auto"
+          style={{ filter: "brightness(0) invert(1)", opacity: 0.92 }}
+        />
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full border"
+          style={{ background: "rgba(217,66,20,0.13)", borderColor: "rgba(217,66,20,0.32)" }}
+        >
+          <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: "#D94214" }}>
+            <FileText className="w-2.5 h-2.5 text-white" />
+          </div>
+          <span className="text-white text-[11px] font-semibold tracking-widest uppercase">LitBox</span>
+        </div>
+      </div>
+
+      {/* Auto-play progress bar */}
+      <div className="relative z-10 h-[2px] shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
+        <div
+          className="absolute inset-y-0 left-0"
+          style={{
+            width: `${progress}%`,
+            background: "#D94214",
+            transition: "width 50ms linear",
+          }}
+        />
+      </div>
+
+      {/* Animated content */}
+      <div className="relative z-10 flex flex-col justify-between flex-1 px-10 py-9 min-h-0">
+
+        {/* Text block */}
+        <div
+          style={{
+            opacity: fading ? 0 : 1,
+            transform: fading ? "translateY(12px)" : "translateY(0)",
+            transition: "opacity 500ms ease, transform 500ms ease",
+          }}
+          className="flex flex-col gap-7"
+        >
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.14em] uppercase px-3 py-1.5 rounded-full border self-start"
+            style={{ background: "rgba(217,66,20,0.12)", borderColor: "rgba(217,66,20,0.35)", color: "#F4A47A" }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#D94214" }} />
+            {slide.badge}
+          </div>
+
+          {/* Title */}
+          <div>
+            <h1 className="text-[2.75rem] font-bold leading-[1.12] text-white tracking-tight">
+              {slide.title[0]}
+            </h1>
+            <h1 className="text-[2.75rem] font-bold leading-[1.12] tracking-tight" style={{ color: "#D94214" }}>
+              {slide.title[1]}
+            </h1>
+          </div>
+
+          {/* Description */}
+          <p className="text-[14px] leading-[1.65] max-w-[300px]" style={{ color: "rgba(255,255,255,0.55)" }}>
+            {slide.description}
+          </p>
+
+          {/* Divider */}
+          <div className="w-10 h-[2px] rounded-full" style={{ background: "#D94214", opacity: 0.6 }} />
+
+          {/* Items */}
+          <div className="flex flex-col">
+            {slide.items.map((item, idx) => (
+              <div
+                key={item.num}
+                className="flex items-start gap-5 py-3.5"
+                style={{ borderTop: idx > 0 ? "1px solid rgba(255,255,255,0.07)" : "none" }}
+              >
+                <span
+                  className="font-mono font-black text-[11px] shrink-0 mt-0.5 w-10"
+                  style={{ color: "#D94214" }}
+                >
+                  {item.num}
+                </span>
+                <div>
+                  <p className="text-[13.5px] font-semibold leading-tight" style={{ color: "rgba(255,255,255,0.92)" }}>
+                    {item.title}
+                  </p>
+                  <p className="text-[12px] mt-1 leading-snug" style={{ color: "rgba(255,255,255,0.40)" }}>
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-4 shrink-0">
+          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.20)" }}>
+            © {new Date().getFullYear()} LitBox · ITransporte
+          </p>
+          <div className="flex gap-2 items-center">
+            {SLIDES.map((_, i) => (
+              <button
+                key={i}
+                aria-label={`Slide ${i + 1}`}
+                onClick={() => goTo(i)}
+                style={{
+                  height: 5,
+                  borderRadius: 9999,
+                  background: i === current ? "#D94214" : "rgba(255,255,255,0.18)",
+                  width: i === current ? 24 : 5,
+                  transition: "all 400ms ease",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface LoginPageProps {
   onLogin: (email: string, password: string) => Promise<boolean>
@@ -107,123 +351,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     { label: "Administrador",  email: "admin@empresa.com" },
   ]
 
-  // ── Left panel ────────────────────────────────────────────────────────────
-  const LeftPanel = () => (
-    <div
-      className="hidden xl:flex flex-col w-[44%] shrink-0 relative overflow-hidden"
-      style={{ background: "linear-gradient(160deg, #0a1628 0%, #0f1e38 50%, #162544 100%)" }}
-    >
-      {/* Subtle grid pattern */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
-      {/* ITransporte orange-red radial glow top-right */}
-      <div
-        className="absolute top-0 right-0 w-96 h-96 pointer-events-none"
-        style={{ background: "radial-gradient(circle at 80% 20%, rgba(217,66,20,0.10) 0%, transparent 65%)" }}
-      />
-      {/* Subtle navy accent bottom-left */}
-      <div
-        className="absolute bottom-0 left-0 w-80 h-80 pointer-events-none"
-        style={{ background: "radial-gradient(circle at 20% 85%, rgba(30,48,80,0.5) 0%, transparent 60%)" }}
-      />
-
-      {/* Brand bar */}
-      <div
-        className="relative z-10 flex items-center justify-between px-9 py-6 border-b"
-        style={{ borderColor: "rgba(255,255,255,0.07)" }}
-      >
-        <img
-          src="https://www.itransporte.cl/wp-content/uploads/2019/11/logo.png"
-          alt="ITransporte"
-          className="h-7 w-auto"
-          style={{ filter: "brightness(0) invert(1)", opacity: 0.9 }}
-        />
-        <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full border"
-          style={{ background: "rgba(217,66,20,0.12)", borderColor: "rgba(217,66,20,0.28)" }}
-        >
-          <div
-            className="w-5 h-5 rounded flex items-center justify-center shrink-0"
-            style={{ background: "#D94214" }}
-          >
-            <FileText className="w-2.5 h-2.5 text-white" />
-          </div>
-          <span className="text-white text-[11px] font-semibold tracking-wide">LitBox</span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 flex flex-col justify-between flex-1 px-9 py-10">
-        <div className="space-y-10">
-          <div className="space-y-5">
-            <div
-              className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-[0.12em] uppercase px-2.5 py-1.5 rounded-full border"
-              style={{ background: "rgba(217,66,20,0.10)", borderColor: "rgba(217,66,20,0.28)", color: "#F0956A" }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-current" />
-              Plataforma Corporativa
-            </div>
-            <h1 className="text-[2.5rem] font-bold leading-[1.18] text-white tracking-tight">
-              Gestión de boletas<br />
-              <span style={{ color: "#D94214" }}>centralizada.</span>
-            </h1>
-            <p
-              className="text-[13.5px] leading-relaxed max-w-[285px]"
-              style={{ color: "rgba(255,255,255,0.5)" }}
-            >
-              Centraliza, gestiona y haz seguimiento de todos los gastos corporativos en un solo lugar.
-            </p>
-          </div>
-
-          <div className="space-y-0">
-            {[
-              { num: "01", title: "Subida de comprobantes", desc: "Los empleados fotografían y suben sus boletas fácilmente." },
-              { num: "02", title: "Auditoría centralizada", desc: "Los auditores revisan, aprueban o rechazan cada solicitud." },
-              { num: "03", title: "Control total", desc: "El administrador tiene visibilidad completa del sistema." },
-            ].map((item, idx) => (
-              <div
-                key={item.num}
-                className="flex gap-4 items-start py-4"
-                style={{ borderTop: idx > 0 ? "1px solid rgba(255,255,255,0.07)" : "none" }}
-              >
-                <span
-                  className="text-[10px] font-mono font-bold shrink-0 mt-0.5"
-                  style={{ color: "#D94214" }}
-                >
-                  {item.num}
-                </span>
-                <div>
-                  <p className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.88)" }}>
-                    {item.title}
-                  </p>
-                  <p className="text-[12px] mt-0.5" style={{ color: "rgba(255,255,255,0.42)" }}>
-                    {item.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-4">
-          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.22)" }}>
-            © {new Date().getFullYear()} LitBox · ITransporte
-          </p>
-          <div className="flex gap-1.5 items-center">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
-            <span className="w-5 h-1.5 rounded-full" style={{ background: "#D94214" }} />
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 
   const MobileHeader = () => (
     <div
@@ -254,7 +381,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   if (step === "login") {
     return (
       <div className="min-h-screen flex font-sans">
-        <LeftPanel />
+        <HeroPanel />
         <div className="flex-1 flex flex-col bg-background">
           <MobileHeader />
           <div className="flex-1 flex items-center justify-center p-8">
@@ -372,7 +499,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   if (step === "forgot_email") {
     return (
       <div className="min-h-screen flex font-sans">
-        <LeftPanel />
+        <HeroPanel />
         <div className="flex-1 flex flex-col bg-background">
           <MobileHeader />
           <div className="flex-1 flex items-center justify-center p-8">
@@ -421,7 +548,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
   return (
     <div className="min-h-screen flex font-sans">
-      <LeftPanel />
+      <HeroPanel />
       <div className="flex-1 flex flex-col bg-background">
         <MobileHeader />
         <div className="flex-1 flex items-center justify-center p-8">
