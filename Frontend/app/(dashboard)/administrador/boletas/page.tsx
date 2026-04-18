@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Search } from "lucide-react"
 import { Card } from "@/components/ui/card"
+import { UserAvatar } from "@/components/user-avatar"
 import { Input } from "@/components/ui/input"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
 import StatusBadge from "@/components/status-badge"
@@ -151,9 +152,17 @@ export default function AdminBoletasPage() {
                       {b.id}
                     </td>
                     <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-foreground">{b.empleadoNombre}</p>
-                        <p className="text-xs text-muted-foreground hidden sm:block">{b.empleadoEmail}</p>
+                      <div className="flex items-center gap-2.5">
+                        <UserAvatar
+                          avatar={b.empleadoNombre?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "??"}
+                          avatarUrl={b.empleadoAvatarUrl}
+                          name={b.empleadoNombre}
+                          size={28}
+                        />
+                        <div>
+                          <p className="font-medium text-foreground">{b.empleadoNombre}</p>
+                          <p className="text-xs text-muted-foreground hidden sm:block">{b.empleadoEmail}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-foreground hidden sm:table-cell">{b.tipo}</td>

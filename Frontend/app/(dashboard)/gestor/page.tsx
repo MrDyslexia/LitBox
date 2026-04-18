@@ -9,6 +9,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
 import { formatMonto, formatFecha, type Boleta } from "@/lib/mock-data"
+import { UserAvatar } from "@/components/user-avatar"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import type { ApiStats } from "@/lib/types"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
@@ -227,12 +228,13 @@ export default function GestorHomePage() {
                       className="w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-muted/50 transition-colors text-left"
                       onClick={() => setPayTarget(boleta)}
                     >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                        style={{ background: urgente ? "oklch(0.55 0.22 27)" : GESTOR_COLOR }}
-                      >
-                        {boleta.empleadoNombre.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                      </div>
+                      <UserAvatar
+                        avatar={boleta.empleadoNombre.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                        avatarUrl={boleta.empleadoAvatarUrl}
+                        name={boleta.empleadoNombre}
+                        size={36}
+                        roleColor={urgente ? "oklch(0.55 0.22 27)" : GESTOR_COLOR}
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{boleta.empleadoNombre}</p>
                         <p className="text-xs text-muted-foreground">{boleta.tipo} · {formatFecha(boleta.fecha)}</p>

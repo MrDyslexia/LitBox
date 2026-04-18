@@ -40,9 +40,9 @@ export async function listarBoletas(filtros: BoletaFiltros, authUser: AuthUser) 
 
   const [items, total] = await Promise.all([
     Boleta.find(query)
-      .populate("empleado", "nombre email avatar")
-      .populate("auditor", "nombre email avatar")
-      .populate("gestor", "nombre email avatar")
+      .populate("empleado", "nombre email avatar avatarUrl")
+      .populate("auditor", "nombre email avatar avatarUrl")
+      .populate("gestor", "nombre email avatar avatarUrl")
       .sort({ fechaCreacion: -1 })
       .skip(skip)
       .limit(limit)
@@ -60,9 +60,9 @@ export async function obtenerBoleta(id: string, authUser: AuthUser) {
     throw Object.assign(new Error("ID inválido"), { status: 400 })
   }
   const boleta = await Boleta.findById(id)
-    .populate("empleado", "nombre email avatar")
-    .populate("auditor", "nombre email avatar")
-    .populate("gestor", "nombre email avatar")
+    .populate("empleado", "nombre email avatar avatarUrl")
+    .populate("auditor", "nombre email avatar avatarUrl")
+    .populate("gestor", "nombre email avatar avatarUrl")
     .lean()
 
   if (!boleta) {
@@ -197,9 +197,9 @@ export async function cambiarEstado(
   })
 
   const resultado = await Boleta.findById(boleta._id)
-    .populate("empleado", "nombre email avatar")
-    .populate("auditor", "nombre email avatar")
-    .populate("gestor", "nombre email avatar")
+    .populate("empleado", "nombre email avatar avatarUrl")
+    .populate("auditor", "nombre email avatar avatarUrl")
+    .populate("gestor", "nombre email avatar avatarUrl")
     .lean()
   broadcast({ type: "boleta:updated", boletaId: id })
 

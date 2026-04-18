@@ -47,6 +47,7 @@ export function normalizeBoleta(b: ApiBoleta): Boleta & { _id: string } {
     estado: b.estado,
     empleadoNombre: b.empleado?.nombre ?? "",
     empleadoEmail: b.empleado?.email ?? "",
+    empleadoAvatarUrl: b.empleado?.avatarUrl ?? null,
     imageUrl: b.imagen?.url ?? "",
     imageTipo: b.imagen?.tipo,
     comentarioAuditor: b.comentarioAuditor,

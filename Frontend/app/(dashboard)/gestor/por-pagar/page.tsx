@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
 import StatusBadge from "@/components/status-badge"
 import { formatMonto, formatFecha, type Boleta } from "@/lib/mock-data"
+import { UserAvatar } from "@/components/user-avatar"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
 import PayModal from "@/components/pay-modal"
@@ -119,12 +120,13 @@ export default function GestorPorPagarPage() {
               <Card key={boleta.id} className="border shadow-none hover:border-muted-foreground/20 transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5"
-                      style={{ background: GESTOR_COLOR }}
-                    >
-                      {boleta.empleadoNombre?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "??"}
-                    </div>
+                    <UserAvatar
+                      avatar={boleta.empleadoNombre?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "??"}
+                      avatarUrl={boleta.empleadoAvatarUrl}
+                      name={boleta.empleadoNombre}
+                      size={36}
+                      roleColor={GESTOR_COLOR}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">

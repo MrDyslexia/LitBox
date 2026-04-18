@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Search, UserPlus, ChevronDown, Trash2, Eye, X, Landmark, Mail, Hash, Calendar, Clock } from "lucide-react"
+import { UserAvatar } from "@/components/user-avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -449,12 +450,13 @@ export default function AdminUsuariosPage() {
           <div className="relative z-10 w-full max-w-md bg-background rounded-xl shadow-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
             <div className="flex items-center justify-between px-5 py-4" style={{ background: "var(--secondary)", borderBottom: "1px solid var(--border)" }}>
               <div className="flex items-center gap-3">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                  style={{ background: roleColors[selectedUser.rol] }}
-                >
-                  {selectedUser.avatar}
-                </div>
+                <UserAvatar
+                  avatar={selectedUser.avatar}
+                  avatarUrl={selectedUser.avatarUrl}
+                  name={selectedUser.nombre}
+                  size={36}
+                  roleColor={roleColors[selectedUser.rol]}
+                />
                 <div>
                   <p className="text-sm font-semibold text-foreground">{selectedUser.nombre}</p>
                   <span
@@ -585,12 +587,13 @@ export default function AdminUsuariosPage() {
                   <tr key={u._id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                          style={{ background: roleColors[u.rol] }}
-                        >
-                          {u.avatar}
-                        </div>
+                        <UserAvatar
+                          avatar={u.avatar}
+                          avatarUrl={u.avatarUrl}
+                          name={u.nombre}
+                          size={28}
+                          roleColor={roleColors[u.rol]}
+                        />
                         <span className="font-medium text-foreground truncate max-w-[100px] sm:max-w-none">{u.primerNombre} {u.primerApellido}</span>
                       </div>
                     </td>

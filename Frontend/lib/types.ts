@@ -52,9 +52,9 @@ export interface ApiBoleta {
   fecha: string
   descripcion: string
   estado: BoletaEstado
-  empleado: { _id: string; nombre: string; email: string; avatar: string }
-  auditor?: { _id: string; nombre: string; email: string; avatar: string }
-  gestor?: { _id: string; nombre: string; email: string; avatar: string }
+  empleado: { _id: string; nombre: string; email: string; avatar: string; avatarUrl?: string | null }
+  auditor?: { _id: string; nombre: string; email: string; avatar: string; avatarUrl?: string | null }
+  gestor?: { _id: string; nombre: string; email: string; avatar: string; avatarUrl?: string | null }
   comentarioAuditor?: string
   fechaRevision?: string
   fechaPago?: string

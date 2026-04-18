@@ -20,6 +20,7 @@ export interface Boleta {
   estado: BoletaStatus
   empleadoNombre: string
   empleadoEmail: string
+  empleadoAvatarUrl?: string | null
   imageUrl: string
   imageTipo?: string
   comentarioAuditor?: string

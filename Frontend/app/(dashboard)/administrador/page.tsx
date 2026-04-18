@@ -9,6 +9,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
 import { formatMonto, type Boleta } from "@/lib/mock-data"
+import { UserAvatar } from "@/components/user-avatar"
 import { boletasApi, usersApi, normalizeBoleta } from "@/lib/api"
 import type { ApiUser, ApiStats } from "@/lib/types"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
@@ -254,12 +255,13 @@ export default function AdminHomePage() {
               <div className="divide-y divide-border">
                 {apiUsers.slice(0, 5).map((u) => (
                   <div key={u._id} className="flex items-center gap-3 px-4 sm:px-5 py-3">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                      style={{ background: roleColors[u.rol] }}
-                    >
-                      {u.avatar}
-                    </div>
+                    <UserAvatar
+                      avatar={u.avatar}
+                      avatarUrl={u.avatarUrl}
+                      name={u.nombre}
+                      size={32}
+                      roleColor={roleColors[u.rol]}
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{u.nombre}</p>
                       <p className="text-xs text-muted-foreground truncate">{u.email}</p>

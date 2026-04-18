@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { CheckCircle, Upload } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -22,9 +22,18 @@ export default function NuevaBoletaPage() {
     descripcion: "",
     imagen: null as File | null,
   })
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState("")
+
+  useEffect(() => {
+    if (!newForm.imagen) { setPreviewUrl(null); return }
+    if (newForm.imagen.type === "application/pdf") { setPreviewUrl("pdf"); return }
+    const url = URL.createObjectURL(newForm.imagen)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [newForm.imagen])
 
   const handleSubmitBoleta = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -107,6 +116,7 @@ export default function NuevaBoletaPage() {
               style={{ background: "var(--primary)" }}
               onClick={() => {
                 setSubmitted(false)
+                setPreviewUrl(null)
                 setNewForm({ tipo: "", monto: "", fecha: "", descripcion: "", imagen: null })
               }}
             >
@@ -189,13 +199,7 @@ export default function NuevaBoletaPage() {
               {/* Upload */}
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Imagen de la boleta</Label>
-                <label
-                  className="flex flex-col items-center justify-center gap-2 w-full rounded-lg border-2 border-dashed cursor-pointer transition-colors py-8"
-                  style={{
-                    borderColor: newForm.imagen ? "var(--accent)" : "var(--border)",
-                    background: newForm.imagen ? "oklch(0.96 0.01 185 / 0.2)" : "transparent",
-                  }}
-                >
+                <label className="block w-full cursor-pointer">
                   <input
                     type="file"
                     accept="image/*,application/pdf"
@@ -218,14 +222,49 @@ export default function NuevaBoletaPage() {
                       setNewForm({ ...newForm, imagen: file })
                     }}
                   />
-                  <Upload
-                    className="w-7 h-7"
-                    style={{ color: newForm.imagen ? "var(--accent)" : "var(--muted-foreground)" }}
-                  />
-                  <span className="text-sm text-muted-foreground text-center px-4">
-                    {newForm.imagen ? newForm.imagen.name : "Toca para subir o arrastra la imagen"}
-                  </span>
-                  <span className="text-xs text-muted-foreground">JPG, PNG, PDF hasta 5 MB</span>
+
+                  {previewUrl && previewUrl !== "pdf" ? (
+                    /* Preview imagen */
+                    <div
+                      className="relative w-full rounded-lg border-2 overflow-hidden"
+                      style={{ borderColor: "var(--accent)" }}
+                    >
+                      <img
+                        src={previewUrl}
+                        alt="Vista previa"
+                        className="w-full max-h-64 object-contain bg-muted"
+                      />
+                      <div
+                        className="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-center justify-between"
+                        style={{ background: "rgba(0,0,0,0.55)" }}
+                      >
+                        <span className="text-white text-xs truncate">{newForm.imagen?.name}</span>
+                        <span className="text-white/70 text-xs shrink-0 ml-2">Toca para cambiar</span>
+                      </div>
+                    </div>
+                  ) : previewUrl === "pdf" ? (
+                    /* Preview PDF */
+                    <div
+                      className="flex items-center gap-3 w-full rounded-lg border-2 px-4 py-5"
+                      style={{ borderColor: "var(--accent)", background: "oklch(0.97 0.01 27 / 0.3)" }}
+                    >
+                      <Upload className="w-8 h-8 shrink-0" style={{ color: "var(--accent)" }} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{newForm.imagen?.name}</p>
+                        <p className="text-xs text-muted-foreground">PDF · Toca para cambiar</p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Estado vacío */
+                    <div
+                      className="flex flex-col items-center justify-center gap-2 w-full rounded-lg border-2 border-dashed py-10 transition-colors"
+                      style={{ borderColor: "var(--border)" }}
+                    >
+                      <Upload className="w-7 h-7 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Toca para subir o arrastra la imagen</span>
+                      <span className="text-xs text-muted-foreground">JPG, PNG, PDF hasta 5 MB</span>
+                    </div>
+                  )}
                 </label>
               </div>
 

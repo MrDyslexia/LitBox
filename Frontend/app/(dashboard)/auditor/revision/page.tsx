@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Search, Filter, CalendarDays } from "lucide-react"
 import { TipoGastoIcon } from "@/components/tipo-gasto-icon"
 import { useTiposGasto } from "@/hooks/useTiposGasto"
+import { UserAvatar } from "@/components/user-avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
@@ -142,12 +143,12 @@ export default function AuditorRevisionPage() {
               <Card className="border shadow-none cursor-pointer hover:shadow-md hover:border-primary/20 transition-all">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5"
-                      style={{ background: "var(--primary)" }}
-                    >
-                      {boleta.empleadoNombre?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "??"}
-                    </div>
+                    <UserAvatar
+                      avatar={boleta.empleadoNombre?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "??"}
+                      avatarUrl={boleta.empleadoAvatarUrl}
+                      name={boleta.empleadoNombre}
+                      size={36}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <span className="text-sm font-semibold text-foreground truncate">
