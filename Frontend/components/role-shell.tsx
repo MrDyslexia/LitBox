@@ -18,7 +18,7 @@ export default function RoleShell({ navItems, roleLabel, roleColor, children }: 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
+    <div className="flex flex-col md:flex-row h-dvh bg-background overflow-hidden">
       {/* Mobile header */}
       <header
         className="md:hidden flex items-center justify-between px-4 py-3 shrink-0"
