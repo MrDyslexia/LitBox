@@ -79,7 +79,7 @@ export default function GestorEstadisticasPage() {
   const top5Tipos = porTipo.slice(0, 5).map((t) => ({ label: t.tipo, value: t.total }))
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 max-w-5xl">
+    <div className="p-4 sm:p-6 space-y-5 max-w-5xl">
       <BreadcrumbNav items={[{ label: "Resumen", href: "/gestor" }, { label: "Estadísticas" }]} />
 
       <PageHeader
@@ -87,6 +87,7 @@ export default function GestorEstadisticasPage() {
         description="KPIs financieros y de eficiencia del ciclo de reembolsos."
       />
 
+      <div className="space-y-8">
       {/* Exposición financiera */}
       <section className="space-y-3">
         <SectionHeader icon={DollarSign} label="Exposición financiera actual" />
@@ -192,6 +193,7 @@ export default function GestorEstadisticasPage() {
           </Card>
         </section>
       )}
+      </div>
     </div>
   )
 }

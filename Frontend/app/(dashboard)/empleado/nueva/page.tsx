@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
+import PageHeader from "@/components/page-header"
 import { TipoGastoIcon } from "@/components/tipo-gasto-icon"
 import { useTiposGasto } from "@/hooks/useTiposGasto"
 import { boletasApi, uploadsApi, ApiError } from "@/lib/api"
@@ -84,19 +85,17 @@ export default function NuevaBoletaPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-2xl">
+    <div className="p-4 sm:p-6 space-y-5 max-w-2xl">
       <BreadcrumbNav
         items={[
           { label: "Inicio", href: "/empleado" },
           { label: "Nueva boleta" },
         ]}
       />
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Nueva boleta</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Completa el formulario para enviar tu solicitud de reembolso.
-        </p>
-      </div>
+      <PageHeader
+        title="Nueva boleta"
+        description="Completa el formulario para enviar tu solicitud de reembolso."
+      />
 
       {submitted ? (
         <Card className="border shadow-none">
@@ -130,28 +129,33 @@ export default function NuevaBoletaPage() {
             <form onSubmit={handleSubmitBoleta} className="space-y-5">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Tipo de gasto</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {loadingTipos ? (
-                    <div className="col-span-full text-sm text-muted-foreground py-3">Cargando tipos...</div>
-                  ) : tiposActivos.map((t) => (
-                    <button
-                      key={t._id}
-                      type="button"
-                      onClick={() => setNewForm({ ...newForm, tipo: t.nombre })}
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all text-left"
-                      style={newForm.tipo === t.nombre
-                        ? { background: "var(--primary)", borderColor: "var(--primary)", color: "white" }
-                        : { background: "var(--secondary)", borderColor: "var(--border)", color: "var(--foreground)" }
-                      }
-                    >
-                      <TipoGastoIcon
-                        icono={t.icono}
-                        className="w-4 h-4 shrink-0"
-                        style={{ color: newForm.tipo === t.nombre ? "white" : "var(--muted-foreground)" }}
-                      />
-                      <span className="truncate">{t.nombre}</span>
-                    </button>
-                  ))}
+                <div className={tiposActivos.length > 9
+                  ? "overflow-y-auto rounded-lg border border-border p-1.5 max-h-[180px] sm:max-h-[138px]"
+                  : ""
+                }>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {loadingTipos ? (
+                      <div className="col-span-full text-sm text-muted-foreground py-3">Cargando tipos...</div>
+                    ) : tiposActivos.map((t) => (
+                      <button
+                        key={t._id}
+                        type="button"
+                        onClick={() => setNewForm({ ...newForm, tipo: t.nombre })}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all text-left"
+                        style={newForm.tipo === t.nombre
+                          ? { background: "var(--primary)", borderColor: "var(--primary)", color: "white" }
+                          : { background: "var(--secondary)", borderColor: "var(--border)", color: "var(--foreground)" }
+                        }
+                      >
+                        <TipoGastoIcon
+                          icono={t.icono}
+                          className="w-4 h-4 shrink-0"
+                          style={{ color: newForm.tipo === t.nombre ? "white" : "var(--muted-foreground)" }}
+                        />
+                        <span className="truncate">{t.nombre}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 {!newForm.tipo && <p className="text-xs text-muted-foreground">Selecciona un tipo de gasto</p>}
                 <input type="hidden" value={newForm.tipo} required />

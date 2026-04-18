@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { FileText, Menu } from "lucide-react"
 import AppSidebar, { type NavItem } from "@/components/app-sidebar"
 
@@ -17,6 +17,17 @@ interface Props {
 export default function RoleShell({ navItems, roleLabel, roleColor, children }: Props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    html.style.overflow = "hidden"
+    body.style.overflow = "hidden"
+    return () => {
+      html.style.overflow = ""
+      body.style.overflow = ""
+    }
+  }, [])
+
   return (
     <div className="flex flex-col md:flex-row h-dvh bg-background overflow-hidden">
       {/* Mobile header */}
@@ -28,7 +39,7 @@ export default function RoleShell({ navItems, roleLabel, roleColor, children }: 
           <img
             src="https://www.itransporte.cl/wp-content/uploads/2019/11/logo.png"
             alt="ITransporte"
-            className="h-5 w-auto"
+            className="h-7 w-auto"
             style={{ filter: "brightness(0) invert(1)", opacity: 0.88 }}
           />
           <div className="h-3.5 w-px" style={{ background: "rgba(255,255,255,0.18)" }} />

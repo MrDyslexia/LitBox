@@ -65,7 +65,7 @@ export default function AuditorEstadisticasPage() {
   const backlog = pendiente + en_revision
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 max-w-5xl">
+    <div className="p-4 sm:p-6 space-y-5 max-w-5xl">
       <BreadcrumbNav items={[{ label: "Resumen", href: "/auditor" }, { label: "Estadísticas" }]} />
 
       <PageHeader
@@ -73,6 +73,7 @@ export default function AuditorEstadisticasPage() {
         description="KPIs operacionales de rendimiento y calidad de revisión."
       />
 
+      <div className="space-y-8">
       {/* Rendimiento */}
       <section className="space-y-3">
         <SectionHeader icon={Target} label="Rendimiento — este mes" />
@@ -187,6 +188,7 @@ export default function AuditorEstadisticasPage() {
           </Card>
         </section>
       )}
+      </div>
     </div>
   )
 }

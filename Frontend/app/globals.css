@@ -4,6 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 :root {
   /* ITransporte brand: #1E3050 navy · #7A6A60 warm gray · #D94214 orange-red */
   --background: oklch(0.985 0.003 250);

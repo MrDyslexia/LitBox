@@ -73,7 +73,7 @@ export default function EmpleadoHomePage() {
 
   return (
     <div className="flex min-h-full">
-      <div className="flex-1 min-w-0 p-4 sm:p-6 space-y-5 sm:space-y-6">
+      <div className="flex-1 min-w-0 p-4 sm:p-6 space-y-5">
         <BreadcrumbNav items={[{ label: "Inicio" }]} />
 
         <PageHeader

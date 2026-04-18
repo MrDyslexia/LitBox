@@ -47,7 +47,7 @@ function SidebarContent({
           <img
             src="https://www.itransporte.cl/wp-content/uploads/2019/11/logo.png"
             alt="ITransporte"
-            className="h-5 w-auto"
+            className="h-7 w-auto"
             style={{ filter: "brightness(0) invert(1)", opacity: 0.88 }}
           />
           <div className="flex items-center gap-1.5">
@@ -224,10 +224,7 @@ export default function AppSidebar(props: AppSidebarProps) {
   const { mobileOpen, onMobileClose } = props
 
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : ""
-    return () => {
-      document.body.style.overflow = ""
-    }
+    // body overflow is managed by RoleShell — no action needed here
   }, [mobileOpen])
 
   return (

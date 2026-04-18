@@ -205,7 +205,7 @@ export default function AdminUsuariosPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-4xl">
+    <div className="p-4 sm:p-6 space-y-5 max-w-4xl">
       <BreadcrumbNav
         items={[
           { label: "Resumen general", href: "/administrador" },
@@ -567,7 +567,7 @@ export default function AdminUsuariosPage() {
           <tr>
             <Th>Usuario</Th>
             <Th className="hidden sm:table-cell">Correo</Th>
-            <Th>Rol</Th>
+            <Th className="hidden sm:table-cell">Rol</Th>
             <Th className="hidden sm:table-cell" align="right">Boletas</Th>
             <Th>Estado</Th>
             <Th align="right">Acciones</Th>
@@ -596,13 +596,21 @@ export default function AdminUsuariosPage() {
                       size={28}
                       roleColor={roleColors[u.rol]}
                     />
-                    <span className="font-medium text-foreground truncate max-w-[140px] sm:max-w-none">
-                      {u.primerNombre} {u.primerApellido}
-                    </span>
+                    <div className="min-w-0">
+                      <span className="font-medium text-foreground truncate max-w-[140px] sm:max-w-none block">
+                        {u.primerNombre} {u.primerApellido}
+                      </span>
+                      <span
+                        className="sm:hidden inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider border mt-0.5"
+                        style={{ color: roleColors[u.rol], borderColor: roleColors[u.rol] }}
+                      >
+                        {roleLabels[u.rol]}
+                      </span>
+                    </div>
                   </div>
                 </Td>
                 <Td className="hidden sm:table-cell text-muted-foreground text-xs">{u.email}</Td>
-                <Td>
+                <Td className="hidden sm:table-cell">
                   <span
                     className="inline-flex items-center text-[10px] font-semibold px-2 py-1 rounded-md uppercase tracking-wider border"
                     style={{

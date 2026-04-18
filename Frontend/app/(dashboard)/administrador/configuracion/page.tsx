@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Mail } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
+import PageHeader from "@/components/page-header"
 import ConfiguracionPerfil from "@/components/configuracion-perfil"
 import { configApi } from "@/lib/api"
 import type { NotificacionesConfig } from "@/lib/types"
@@ -49,19 +50,17 @@ export default function AdminConfiguracionPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-w-2xl">
+    <div className="p-4 sm:p-6 space-y-5 max-w-2xl">
       <BreadcrumbNav
         items={[
           { label: "Resumen general", href: "/administrador" },
           { label: "Configuración" },
         ]}
       />
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Configuración</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Gestiona tu perfil y las preferencias de notificaciones.
-        </p>
-      </div>
+      <PageHeader
+        title="Configuración"
+        description="Gestiona tu perfil y las preferencias de notificaciones."
+      />
 
       {/* Datos de perfil */}
       <ConfiguracionPerfil onBack={() => router.push("/administrador")} embedded />

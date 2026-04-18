@@ -79,7 +79,7 @@ export default function AdminEstadisticasPage() {
   const top5Tipos = porTipo.slice(0, 5).map((t) => ({ label: t.tipo, value: t.total }))
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 max-w-5xl">
+    <div className="p-4 sm:p-6 space-y-5 max-w-5xl">
       <BreadcrumbNav items={[{ label: "Resumen general", href: "/administrador" }, { label: "Estadísticas" }]} />
 
       <PageHeader
@@ -87,6 +87,7 @@ export default function AdminEstadisticasPage() {
         description="KPIs operacionales globales del sistema de gestión de boletas."
       />
 
+      <div className="space-y-8">
       {/* Salud del sistema */}
       <section className="space-y-3">
         <SectionHeader icon={Target} label="Salud del sistema" />
@@ -254,6 +255,7 @@ export default function AdminEstadisticasPage() {
           </Card>
         </div>
       </section>
+      </div>
     </div>
   )
 }

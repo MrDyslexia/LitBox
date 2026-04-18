@@ -59,7 +59,7 @@ export default function EmpleadoEstadisticasPage() {
   const top5Tipos = porTipo.slice(0, 5).map((t) => ({ label: t.tipo, value: t.total }))
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 max-w-5xl">
+    <div className="p-4 sm:p-6 space-y-5 max-w-5xl">
       <BreadcrumbNav items={[{ label: "Inicio", href: "/empleado" }, { label: "Estadísticas" }]} />
 
       <PageHeader
@@ -67,6 +67,7 @@ export default function EmpleadoEstadisticasPage() {
         description="Rendimiento personal de reembolsos y calidad de submissions."
       />
 
+      <div className="space-y-8">
       {/* Mi dinero */}
       <section className="space-y-3">
         <SectionHeader icon={Wallet} label="Mi dinero" />
@@ -167,6 +168,7 @@ export default function EmpleadoEstadisticasPage() {
       {loading && (
         <div className="text-center py-8 text-sm text-muted-foreground">Cargando...</div>
       )}
+      </div>
     </div>
   )
 }
