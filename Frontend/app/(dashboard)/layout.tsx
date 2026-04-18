@@ -43,6 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           email: u.email,
           role: u.rol,
           avatar: u.avatar,
+          avatarUrl: u.avatarUrl,
           esNuevo: u.esNuevo,
         }
 

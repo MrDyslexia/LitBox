@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Eye, EyeOff, User as UserIcon, Lock, Landmark, Save } from "lucide-react"
+import { Eye, EyeOff, User as UserIcon, Lock, Landmark, Save, Camera, Trash2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
-import { auth } from "@/lib/api"
+import { auth, uploadsApi } from "@/lib/api"
 import type { ApiUser } from "@/lib/types"
 import { useUser } from "@/contexts/user-context"
 
@@ -72,6 +72,10 @@ function FeedbackMsg({ msg, type }: { msg: string; type?: "success" | "error" })
 export default function ConfiguracionPerfil({ onBack, embedded = false }: ConfiguracionPerfilProps) {
   const { user, onUpdate } = useUser()
   const [apiUser, setApiUser] = useState<ApiUser | null>(null)
+
+  // ── Foto de perfil ────────────────────────────────────────────────────────
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [msgAvatar, setMsgAvatar] = useState("")
 
   // ── Datos personales ──────────────────────────────────────────────────────
   const [nombres, setNombres] = useState({ primerNombre: "", segundoNombre: "", primerApellido: "", segundoApellido: "", email: "" })
@@ -225,6 +229,36 @@ export default function ConfiguracionPerfil({ onBack, embedded = false }: Config
     }
   }
 
+  const handleUploadAvatar = async (file: File) => {
+    setUploadingAvatar(true)
+    setMsgAvatar("")
+    try {
+      const { user: updated } = await uploadsApi.uploadAvatar(file)
+      setApiUser(updated)
+      setMsgAvatar("Foto actualizada.")
+    } catch (err) {
+      setMsgAvatar(`Error: ${err instanceof Error ? err.message : "No se pudo subir"}`)
+    } finally {
+      setUploadingAvatar(false)
+      setTimeout(() => setMsgAvatar(""), 4000)
+    }
+  }
+
+  const handleDeleteAvatar = async () => {
+    setUploadingAvatar(true)
+    setMsgAvatar("")
+    try {
+      const { user: updated } = await uploadsApi.deleteAvatar()
+      setApiUser(updated)
+      setMsgAvatar("Foto eliminada.")
+    } catch (err) {
+      setMsgAvatar(`Error: ${err instanceof Error ? err.message : "No se pudo eliminar"}`)
+    } finally {
+      setUploadingAvatar(false)
+      setTimeout(() => setMsgAvatar(""), 4000)
+    }
+  }
+
   const passStrength = (): { label: string; color: string; width: string } => {
     if (!pass.nueva) return { label: "", color: "transparent", width: "0%" }
     if (pass.nueva.length < 8)  return { label: "Muy corta", color: "oklch(0.55 0.22 27)", width: "25%" }
@@ -244,6 +278,76 @@ export default function ConfiguracionPerfil({ onBack, embedded = false }: Config
           </div>
         </>
       )}
+
+      {/* Sección: Foto de perfil */}
+      <Section icon={<Camera className="w-4 h-4 text-muted-foreground" />} title="Foto de perfil">
+        <div className="flex items-center gap-5">
+          {/* Preview */}
+          <div className="shrink-0">
+            {apiUser?.avatarUrl ? (
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL}${apiUser.avatarUrl}`}
+                alt="Foto de perfil"
+                className="w-20 h-20 rounded-full object-cover border-2"
+                style={{ borderColor: "var(--border)" }}
+              />
+            ) : (
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white"
+                style={{ background: "var(--primary)" }}
+              >
+                {user.avatar}
+              </div>
+            )}
+          </div>
+
+          {/* Acciones */}
+          <div className="space-y-3 flex-1">
+            <p className="text-sm text-muted-foreground">
+              Sube una foto cuadrada. Máximo 5 MB (JPG, PNG, WebP).
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  disabled={uploadingAvatar}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleUploadAvatar(file)
+                    e.target.value = ""
+                  }}
+                />
+                <span
+                  className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold text-white cursor-pointer"
+                  style={{ background: uploadingAvatar ? "var(--muted-foreground)" : "var(--primary)" }}
+                >
+                  <Camera className="w-4 h-4" />
+                  {uploadingAvatar ? "Subiendo..." : "Subir foto"}
+                </span>
+              </label>
+              {apiUser?.avatarUrl && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-9 text-sm"
+                  onClick={handleDeleteAvatar}
+                  disabled={uploadingAvatar}
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Eliminar
+                </Button>
+              )}
+            </div>
+            {msgAvatar && (
+              <p className="text-sm font-medium" style={{ color: msgAvatar.startsWith("Error") ? "var(--destructive)" : "oklch(0.58 0.14 162)" }}>
+                {msgAvatar}
+              </p>
+            )}
+          </div>
+        </div>
+      </Section>
 
       {/* Sección: Datos personales */}
       <Section icon={<UserIcon className="w-4 h-4 text-muted-foreground" />} title="Datos personales">

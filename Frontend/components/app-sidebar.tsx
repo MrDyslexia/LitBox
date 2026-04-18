@@ -77,12 +77,20 @@ function SidebarContent({
       {/* User chip */}
       <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--sidebar-border)" }}>
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-            style={{ background: roleColor }}
-          >
-            {user.avatar}
-          </div>
+          {user.avatarUrl ? (
+            <img
+              src={`${process.env.NEXT_PUBLIC_API_URL}${user.avatarUrl}`}
+              alt={user.name}
+              className="w-8 h-8 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+              style={{ background: roleColor }}
+            >
+              {user.avatar}
+            </div>
+          )}
           <div className="min-w-0">
             <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: "var(--sidebar-foreground)" }}>
               {user.name}

@@ -16,6 +16,7 @@ export interface IUser extends Document {
   rol: UserRole
   activo: boolean
   avatar: string
+  avatarUrl?: string | null
   infoBancaria?: {
     banco: string
     tipoCuenta: "corriente" | "vista" | "ahorro"
@@ -101,6 +102,10 @@ const userSchema = new Schema<IUser>(
     avatar: {
       type: String,
       default: "",
+    },
+    avatarUrl: {
+      type: String,
+      default: null,
     },
     infoBancaria: {
       banco:        { type: String, trim: true },

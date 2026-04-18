@@ -1,4 +1,4 @@
-import type { ApiUser, ApiBoleta, ApiStats, ApiPaginated, NotificacionesConfig } from "./types"
+import type { ApiUser, ApiBoleta, ApiStats, ApiPaginated, NotificacionesConfig, TipoGasto } from "./types"
 import type { Boleta } from "./mock-data"
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
@@ -215,6 +215,28 @@ export const configApi = {
     }),
 }
 
+// ─── Tipos de gasto ───────────────────────────────────────────────────────────
+
+export const tiposGastoApi = {
+  list: () =>
+    req<TipoGasto[]>("/api/config/tipos-gasto"),
+
+  create: (data: { nombre: string; icono: string }) =>
+    req<TipoGasto>("/api/config/tipos-gasto", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: Partial<{ nombre: string; icono: string; activo: boolean; orden: number }>) =>
+    req<TipoGasto>(`/api/config/tipos-gasto/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    req<void>(`/api/config/tipos-gasto/${id}`, { method: "DELETE" }),
+}
+
 // ─── Uploads ──────────────────────────────────────────────────────────────────
 
 export const uploadsApi = {
@@ -226,4 +248,16 @@ export const uploadsApi = {
       body: fd,
     })
   },
+
+  uploadAvatar: (file: File) => {
+    const fd = new FormData()
+    fd.append("file", file)
+    return req<{ avatarUrl: string; user: ApiUser }>("/api/config/avatar", {
+      method: "POST",
+      body: fd,
+    })
+  },
+
+  deleteAvatar: () =>
+    req<{ mensaje: string; user: ApiUser }>("/api/config/avatar", { method: "DELETE" }),
 }

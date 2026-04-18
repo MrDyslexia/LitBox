@@ -47,16 +47,7 @@ const boletaSchema = new Schema<IBoleta>(
     tipo: {
       type: String,
       required: [true, "El tipo de boleta es requerido"],
-      enum: [
-        "Traslado",
-        "Reuniones comerciales",
-        "Insumos urgentes",
-        "Alimentación",
-        "Hospedaje",
-        "Comunicaciones",
-        "Materiales de oficina",
-        "Otro",
-      ],
+      trim: true,
     },
     monto: {
       type: Number,

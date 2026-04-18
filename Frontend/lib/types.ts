@@ -24,6 +24,7 @@ export interface ApiUser {
   rol: UserRole
   activo: boolean
   avatar: string
+  avatarUrl?: string | null
   infoBancaria?: {
     banco: string
     tipoCuenta: "corriente" | "vista" | "ahorro"
@@ -33,6 +34,14 @@ export interface ApiUser {
   fechaCreacion: string
   ultimoAcceso?: string
   totalBoletas?: number
+}
+
+export interface TipoGasto {
+  _id: string
+  nombre: string
+  icono: string
+  activo: boolean
+  orden: number
 }
 
 export interface ApiBoleta {

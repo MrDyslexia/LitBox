@@ -179,6 +179,16 @@ export async function recuperarPassword(email: string, codigo: string, passwordN
   return { mensaje: "Contraseña restablecida correctamente" }
 }
 
+// ─── Actualizar avatar (foto de perfil) ──────────────────────────────────────
+
+export async function actualizarAvatar(userId: string, avatarUrl: string | null) {
+  const user = await User.findById(userId)
+  if (!user) throw Object.assign(new Error("Usuario no encontrado"), { status: 404 })
+  user.avatarUrl = avatarUrl
+  await user.save()
+  return user.toPublic()
+}
+
 // ─── Completar perfil (primer inicio de sesión) ───────────────────────────────
 
 export async function completarPerfil(

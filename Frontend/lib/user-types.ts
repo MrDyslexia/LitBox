@@ -6,5 +6,6 @@ export interface User {
   email: string
   role: UserRole
   avatar: string
+  avatarUrl?: string | null
   esNuevo: boolean
 }

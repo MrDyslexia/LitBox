@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Search, Filter, CalendarDays } from "lucide-react"
+import { TipoGastoIcon } from "@/components/tipo-gasto-icon"
+import { useTiposGasto } from "@/hooks/useTiposGasto"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
@@ -23,6 +25,7 @@ const statusFilters: { value: BoletaStatus | "todas"; label: string }[] = [
 ]
 
 export default function AuditorRevisionPage() {
+  const { getIcono } = useTiposGasto()
   const [boletas, setBoletas] = useState<Boleta[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -154,7 +157,10 @@ export default function AuditorRevisionPage() {
                           {formatMonto(boleta.monto)}
                         </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">{boleta.tipo}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <TipoGastoIcon icono={getIcono(boleta.tipo)} className="w-3 h-3 shrink-0" />
+                        {boleta.tipo}
+                      </p>
                       <div className="flex items-center gap-3 mt-2 flex-wrap">
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <CalendarDays className="w-3 h-3" />

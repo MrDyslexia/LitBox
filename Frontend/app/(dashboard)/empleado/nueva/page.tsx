@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import BreadcrumbNav from "@/components/breadcrumb-nav"
-import { TIPOS_BOLETA, type BoletaTipo } from "@/lib/mock-data"
+import { TipoGastoIcon } from "@/components/tipo-gasto-icon"
+import { useTiposGasto } from "@/hooks/useTiposGasto"
 import { boletasApi, uploadsApi, ApiError } from "@/lib/api"
 
 export default function NuevaBoletaPage() {
   const router = useRouter()
+  const { tiposActivos, loading: loadingTipos } = useTiposGasto()
   const [newForm, setNewForm] = useState({
-    tipo: "" as BoletaTipo | "",
+    tipo: "" as string,
     monto: "",
     fecha: "",
     descripcion: "",
@@ -28,6 +30,12 @@ export default function NuevaBoletaPage() {
     e.preventDefault()
     setSubmitting(true)
     setSubmitError("")
+
+    if (!newForm.tipo) {
+      setSubmitError("Selecciona un tipo de gasto.")
+      setSubmitting(false)
+      return
+    }
 
     // Validar que la fecha no sea futura
     const today = new Date()
@@ -112,18 +120,31 @@ export default function NuevaBoletaPage() {
             <form onSubmit={handleSubmitBoleta} className="space-y-5">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Tipo de gasto</Label>
-                <select
-                  className="w-full h-11 px-3 rounded-lg border text-sm bg-background text-foreground"
-                  style={{ borderColor: "var(--border)" }}
-                  value={newForm.tipo}
-                  onChange={(e) => setNewForm({ ...newForm, tipo: e.target.value as BoletaTipo })}
-                  required
-                >
-                  <option value="">Selecciona un tipo...</option>
-                  {TIPOS_BOLETA.map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {loadingTipos ? (
+                    <div className="col-span-full text-sm text-muted-foreground py-3">Cargando tipos...</div>
+                  ) : tiposActivos.map((t) => (
+                    <button
+                      key={t._id}
+                      type="button"
+                      onClick={() => setNewForm({ ...newForm, tipo: t.nombre })}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all text-left"
+                      style={newForm.tipo === t.nombre
+                        ? { background: "var(--primary)", borderColor: "var(--primary)", color: "white" }
+                        : { background: "var(--secondary)", borderColor: "var(--border)", color: "var(--foreground)" }
+                      }
+                    >
+                      <TipoGastoIcon
+                        icono={t.icono}
+                        className="w-4 h-4 shrink-0"
+                        style={{ color: newForm.tipo === t.nombre ? "white" : "var(--muted-foreground)" }}
+                      />
+                      <span className="truncate">{t.nombre}</span>
+                    </button>
                   ))}
-                </select>
+                </div>
+                {!newForm.tipo && <p className="text-xs text-muted-foreground">Selecciona un tipo de gasto</p>}
+                <input type="hidden" value={newForm.tipo} required />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
