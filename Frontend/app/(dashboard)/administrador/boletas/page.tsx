@@ -10,11 +10,14 @@ import PageHeader from "@/components/page-header"
 import FilterChips from "@/components/filter-chips"
 import DataTableShell, { TableHeader, Th, Tr, Td } from "@/components/data-table-shell"
 import Pagination from "@/components/pagination"
-import { formatMonto, formatFecha, type Boleta, type BoletaStatus } from "@/lib/mock-data"
+import { formatMonto, formatFecha, type Boleta, type BoletaStatus, MOCK_BOLETAS } from "@/lib/mock-data"
 import { boletasApi, normalizeBoleta } from "@/lib/api"
 import { useBoletasSync } from "@/hooks/useBoletasSync"
 
 const PAGE_SIZE = 20
+
+// Fallback para demostración
+const DEMO_BOLETAS = MOCK_BOLETAS.map(b => ({ ...b, _id: b.id }))
 
 const statusFilters: ReadonlyArray<{ value: BoletaStatus | "todas"; label: string }> = [
   { value: "todas", label: "Todas" },
@@ -58,6 +61,23 @@ export default function AdminBoletasPage() {
         setTotal(result.total || 0)
       }
     } catch (err) {
+      // Fallback con datos mock para demostración
+      let filtered = [...DEMO_BOLETAS]
+      if (debouncedSearch) {
+        const q = debouncedSearch.toLowerCase()
+        filtered = filtered.filter(b => 
+          b.descripcion.toLowerCase().includes(q) || 
+          b.empleadoNombre.toLowerCase().includes(q)
+        )
+      }
+      if (filterStatus !== "todas") {
+        filtered = filtered.filter(b => b.estado === filterStatus)
+      }
+      const start = (page - 1) * PAGE_SIZE
+      const end = start + PAGE_SIZE
+      setBoletas(filtered.slice(start, end))
+      setTotal(filtered.length)
+      setTotalPages(Math.ceil(filtered.length / PAGE_SIZE))
       console.error("Error cargando boletas:", err)
     } finally {
       setLoading(false)
