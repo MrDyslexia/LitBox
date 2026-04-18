@@ -1,8 +1,10 @@
 "use client"
 
-import { Clock, CheckCircle, CalendarDays, AlertCircle, Timer } from "lucide-react"
+import { DollarSign, AlertTriangle, CheckCircle, CalendarDays, Clock, TrendingUp } from "lucide-react"
 import { formatMonto } from "@/lib/mock-data"
 import type { ApiStats } from "@/lib/types"
+
+const GESTOR_COLOR = "oklch(0.36 0.08 252)"
 
 interface Props {
   stats: ApiStats | null
@@ -12,89 +14,112 @@ interface Props {
 }
 
 function PanelContent({ stats, loading, oldestUnpaidDays }: Omit<Props, "mobile">) {
-  const aprobada = stats?.aprobada ?? 0
-  const pagada = stats?.pagada ?? 0
-  const pagadasMes = stats?.pagadasMes ?? 0
-  const montoPagado = stats?.montoPagado ?? 0
+  const aprobada      = stats?.aprobada ?? 0
+  const pagada        = stats?.pagada ?? 0
+  const pagadasMes    = stats?.pagadasMes ?? 0
+  const montoPagado   = stats?.montoPagado ?? 0
   const montoPagadoMes = stats?.montoPagadoMes ?? 0
   const montoAprobado = stats?.montoAprobado ?? 0
+  const tiempoEndToEnd = stats?.tiempoEndToEnd ?? null
+  const atrasadas     = stats?.boletasAtrasadas ?? 0
 
-  const oldestLabel =
-    oldestUnpaidDays !== null ? `${oldestUnpaidDays} días sin pagar` : "—"
-  const oldestSubtitle =
-    oldestUnpaidDays !== null && oldestUnpaidDays > 5 ? "Atención requerida" : "Al día"
-  const oldestSubtitleColor =
-    oldestUnpaidDays !== null && oldestUnpaidDays > 5
-      ? "oklch(0.55 0.22 27)"
-      : undefined
+  // Payment rate
+  const totalClosed = pagada + aprobada
+  const paymentRate = totalClosed > 0 ? Math.round((pagada / totalClosed) * 100) : 0
 
-  const isOldestAlert = !loading && oldestUnpaidDays !== null && oldestUnpaidDays > 5
+  // DPO semáforo
+  const dpoBad  = oldestUnpaidDays != null && oldestUnpaidDays > 5
+  const dpoWarn = oldestUnpaidDays != null && oldestUnpaidDays >= 3 && !dpoBad
+  const dpoColor = dpoBad ? "oklch(0.55 0.22 27)" : dpoWarn ? "oklch(0.55 0.14 72)" : oldestUnpaidDays != null ? "oklch(0.58 0.14 162)" : "var(--muted-foreground)"
+  const dpoBg    = dpoBad ? "oklch(0.97 0.02 27)" : dpoWarn ? "oklch(0.97 0.03 72)" : "var(--secondary)"
+  const dpoBorder = dpoBad ? "oklch(0.88 0.06 27)" : dpoWarn ? "oklch(0.88 0.07 72)" : "var(--border)"
+
+  // Cycle semáforo
+  const cycleColor =
+    tiempoEndToEnd == null  ? "var(--muted-foreground)"
+    : tiempoEndToEnd < 7   ? "oklch(0.58 0.14 162)"
+    : tiempoEndToEnd <= 14 ? "oklch(0.55 0.14 72)"
+                            : "oklch(0.55 0.22 27)"
 
   return (
     <>
-      {/* Hero card — Por pagar (most critical metric for gestor) */}
-      <div
-        className="rounded-xl p-4"
-        style={{ background: "oklch(0.22 0.06 252)" }}
-      >
+      {/* Hero — Cash Exposure */}
+      <div className="rounded-xl p-4" style={{ background: GESTOR_COLOR }}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold uppercase tracking-wide text-white/70">
-            Por pagar
-          </span>
-          <Clock className="w-4 h-4 text-white/50" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-white/70">Cash Exposure</span>
+          <DollarSign className="w-4 h-4 text-white/50" />
         </div>
         <p className="text-3xl font-black text-white tracking-tight">
-          {loading ? "—" : aprobada}
+          {loading ? "—" : formatMonto(montoAprobado)}
         </p>
-        {!loading && (
-          <p className="text-xs text-white/60 mt-2">{formatMonto(montoAprobado)}</p>
-        )}
+        <p className="text-xs text-white/60 mt-2">
+          {loading ? "" : `${aprobada} boleta${aprobada !== 1 ? "s" : ""} sin pagar`}
+        </p>
       </div>
 
-      {/* Green tint — Total pagado */}
-      <div
-        className="rounded-xl p-3.5"
-        style={{
-          background: "oklch(0.97 0.01 162 / 0.6)",
-          border: "1px solid oklch(0.92 0.02 162)",
-        }}
-      >
+      {/* DPO */}
+      <div className="rounded-xl p-3.5" style={{ background: dpoBg, border: `1px solid ${dpoBorder}` }}>
         <div className="flex items-start justify-between gap-2 mb-2">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">
-            Total pagado
+            DPO — Antigüedad máx.
           </span>
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: "oklch(0.58 0.14 162 / 0.15)" }}
-          >
-            <CheckCircle className="w-3.5 h-3.5" style={{ color: "oklch(0.58 0.14 162)" }} />
+          <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+            style={{ background: dpoBad ? "oklch(0.55 0.22 27 / 0.12)" : dpoWarn ? "oklch(0.55 0.14 72 / 0.15)" : "var(--muted)" }}>
+            <AlertTriangle className="w-3.5 h-3.5" style={{ color: dpoColor }} />
           </div>
         </div>
         <p className="text-2xl font-black text-foreground tracking-tight">
-          {loading ? "—" : formatMonto(montoPagado)}
+          {loading ? "—" : oldestUnpaidDays != null ? `${oldestUnpaidDays} días` : "—"}
         </p>
-        <p className="text-[11px] text-muted-foreground mt-1">
-          {loading ? "" : `${pagada} boletas históricas`}
+        <p className="text-[11px] mt-1 font-medium" style={{ color: dpoColor }}>
+          {loading ? "" : oldestUnpaidDays == null ? "Sin deuda pendiente" : dpoBad ? "Pago urgente" : dpoWarn ? "Atención requerida" : "Al día"}
         </p>
       </div>
 
-      {/* Blue tint — Pagadas este mes */}
-      <div
-        className="rounded-xl p-3.5"
-        style={{
-          background: "oklch(0.97 0.02 252 / 0.6)",
-          border: "1px solid oklch(0.92 0.03 252)",
-        }}
-      >
+      {/* Payment Rate */}
+      <div className="rounded-xl p-3.5" style={{ background: "oklch(0.97 0.01 162 / 0.6)", border: "1px solid oklch(0.92 0.02 162)" }}>
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">
+            Payment Rate
+          </span>
+          <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: "oklch(0.58 0.14 162 / 0.15)" }}>
+            <TrendingUp className="w-3.5 h-3.5" style={{ color: "oklch(0.58 0.14 162)" }} />
+          </div>
+        </div>
+        <p className="text-2xl font-black text-foreground tracking-tight">
+          {loading ? "—" : `${paymentRate}%`}
+        </p>
+        <div className="w-full h-1.5 rounded-full overflow-hidden mt-2" style={{ background: "var(--muted)" }}>
+          <div className="h-full rounded-full" style={{ width: `${loading ? 0 : paymentRate}%`, background: "oklch(0.58 0.14 162)" }} />
+        </div>
+      </div>
+
+      {/* Ciclo E2E */}
+      <div className="rounded-xl p-3.5" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">
+            Ciclo E2E
+          </span>
+          <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: "var(--muted)" }}>
+            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+          </div>
+        </div>
+        <p className="text-2xl font-black text-foreground tracking-tight">
+          {loading ? "—" : tiempoEndToEnd != null ? `${tiempoEndToEnd.toFixed(1)} d` : "—"}
+        </p>
+        <p className="text-[11px] mt-1 font-medium" style={{ color: cycleColor }}>
+          {loading ? "" : tiempoEndToEnd == null ? "Sin datos" : tiempoEndToEnd < 7 ? "Eficiente" : tiempoEndToEnd <= 14 ? "Moderado" : "Lento"}
+        </p>
+      </div>
+
+      {/* Pagadas este mes */}
+      <div className="rounded-xl p-3.5" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
         <div className="flex items-start justify-between gap-2 mb-2">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">
             Pagadas este mes
           </span>
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: "oklch(0.26 0.065 252 / 0.12)" }}
-          >
-            <CalendarDays className="w-3.5 h-3.5" style={{ color: "var(--primary)" }} />
+          <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: "oklch(0.94 0.02 252)" }}>
+            <CalendarDays className="w-3.5 h-3.5" style={{ color: GESTOR_COLOR }} />
           </div>
         </div>
         <p className="text-2xl font-black text-foreground tracking-tight">
@@ -105,71 +130,22 @@ function PanelContent({ stats, loading, oldestUnpaidDays }: Omit<Props, "mobile"
         </p>
       </div>
 
-      {/* Alert card — Boleta mas antigua sin pagar */}
-      <div
-        className="rounded-xl p-3.5"
-        style={{
-          background: isOldestAlert ? "oklch(0.97 0.02 27)" : "var(--secondary)",
-          border: `1px solid ${isOldestAlert ? "oklch(0.88 0.06 27)" : "var(--border)"}`,
-        }}
-      >
+      {/* Total histórico */}
+      <div className="rounded-xl p-3.5" style={{ background: "oklch(0.97 0.01 162 / 0.5)", border: "1px solid oklch(0.92 0.02 162)" }}>
         <div className="flex items-start justify-between gap-2 mb-2">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">
-            Boleta más antigua sin pagar
+            Total reembolsado
           </span>
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-            style={{
-              background: isOldestAlert
-                ? "oklch(0.55 0.22 27 / 0.12)"
-                : "var(--muted)",
-            }}
-          >
-            <AlertCircle
-              className="w-3.5 h-3.5"
-              style={{
-                color: isOldestAlert ? "oklch(0.55 0.22 27)" : undefined,
-              }}
-            />
+          <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: "oklch(0.58 0.14 162 / 0.15)" }}>
+            <CheckCircle className="w-3.5 h-3.5" style={{ color: "oklch(0.58 0.14 162)" }} />
           </div>
         </div>
         <p className="text-2xl font-black text-foreground tracking-tight">
-          {loading ? "—" : oldestLabel}
+          {loading ? "—" : formatMonto(montoPagado)}
         </p>
-        {!loading && (
-          <p
-            className="text-[11px] mt-1"
-            style={oldestSubtitleColor ? { color: oldestSubtitleColor } : { color: "var(--muted-foreground)" }}
-          >
-            {oldestSubtitle}
-          </p>
-        )}
-      </div>
-
-      {/* Gray — Tiempo promedio de pago */}
-      <div
-        className="rounded-xl p-3.5"
-        style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
-      >
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">
-            Tiempo promedio de pago
-          </span>
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: "var(--muted)" }}
-          >
-            <Timer className="w-3.5 h-3.5 text-muted-foreground" />
-          </div>
-        </div>
-        <p className="text-2xl font-black text-foreground tracking-tight">
-          {loading
-            ? "—"
-            : stats?.tiempoEndToEnd != null
-            ? `${stats.tiempoEndToEnd.toFixed(1)} días`
-            : "—"}
+        <p className="text-[11px] text-muted-foreground mt-1">
+          {loading ? "" : `${pagada} boletas históricas`}
         </p>
-        <p className="text-[11px] text-muted-foreground mt-1">desde aprobación hasta pago</p>
       </div>
     </>
   )
@@ -190,8 +166,8 @@ export default function GestorStatsPanel({ stats, loading, oldestUnpaidDays, mob
       style={{ borderColor: "var(--border)", maxHeight: "100vh" }}
     >
       <div className="flex items-center gap-2 px-1 pb-1">
-        <div className="w-1 h-4 rounded-full shrink-0" style={{ background: "oklch(0.26 0.065 252)" }} />
-        <h2 className="text-xs font-bold text-foreground">Estadísticas</h2>
+        <div className="w-1 h-4 rounded-full shrink-0" style={{ background: GESTOR_COLOR }} />
+        <h2 className="text-xs font-bold text-foreground">KPIs Pagos</h2>
       </div>
       <PanelContent stats={stats} loading={loading} oldestUnpaidDays={oldestUnpaidDays} />
     </aside>
