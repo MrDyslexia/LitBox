@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle, Upload } from "lucide-react"
+import { CheckCircle, Upload, ScanLine, Loader2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,14 @@ import PageHeader from "@/components/page-header"
 import { TipoGastoIcon } from "@/components/tipo-gasto-icon"
 import { useTiposGasto } from "@/hooks/useTiposGasto"
 import { boletasApi, uploadsApi, ApiError } from "@/lib/api"
+
+function AutoBadge() {
+  return (
+    <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ background: "oklch(0.92 0.05 145)", color: "oklch(0.4 0.13 145)" }}>
+      auto
+    </span>
+  )
+}
 
 export default function NuevaBoletaPage() {
   const router = useRouter()
@@ -27,6 +35,8 @@ export default function NuevaBoletaPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState("")
+  const [scanning, setScanning] = useState(false)
+  const [scanned, setScanned] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!newForm.imagen) { setPreviewUrl(null); return }
@@ -35,6 +45,28 @@ export default function NuevaBoletaPage() {
     setPreviewUrl(url)
     return () => URL.revokeObjectURL(url)
   }, [newForm.imagen])
+
+  const autoScan = async (file: File) => {
+    if (!file.type.startsWith("image/")) return
+    setScanning(true)
+    setScanned(new Set())
+    try {
+      const resultado = await boletasApi.scan(file)
+      const filled = new Set<string>()
+      setNewForm((prev) => {
+        const next = { ...prev }
+        if (resultado.monto && !prev.monto) { next.monto = String(resultado.monto); filled.add("monto") }
+        if (resultado.fecha && !prev.fecha) { next.fecha = resultado.fecha; filled.add("fecha") }
+        if (resultado.descripcion && !prev.descripcion) { next.descripcion = resultado.descripcion; filled.add("descripcion") }
+        return next
+      })
+      setScanned(filled)
+    } catch {
+      // scan silently fails — user fills manually
+    } finally {
+      setScanning(false)
+    }
+  }
 
   const handleSubmitBoleta = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -116,6 +148,7 @@ export default function NuevaBoletaPage() {
               onClick={() => {
                 setSubmitted(false)
                 setPreviewUrl(null)
+                setScanned(new Set())
                 setNewForm({ tipo: "", monto: "", fecha: "", descripcion: "", imagen: null })
               }}
             >
@@ -127,6 +160,20 @@ export default function NuevaBoletaPage() {
         <Card className="border shadow-none">
           <CardContent className="p-4 sm:p-5">
             <form onSubmit={handleSubmitBoleta} className="space-y-5">
+
+              {scanning && (
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm" style={{ background: "oklch(0.95 0.03 250)", color: "oklch(0.45 0.12 250)" }}>
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  <span>Escaneando boleta...</span>
+                </div>
+              )}
+              {!scanning && scanned.size > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm" style={{ background: "oklch(0.95 0.04 145)", color: "oklch(0.45 0.13 145)" }}>
+                  <ScanLine className="w-4 h-4 shrink-0" />
+                  <span>Se detectaron {scanned.size} campo{scanned.size !== 1 ? "s" : ""} automáticamente. Verifica antes de enviar.</span>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Tipo de gasto</Label>
                 <div className={tiposActivos.length > 9
@@ -163,7 +210,10 @@ export default function NuevaBoletaPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Monto (CLP)</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm font-medium">Monto (CLP)</Label>
+                    {scanned.has("monto") && <AutoBadge />}
+                  </div>
                   <Input
                     type="number"
                     placeholder="0"
@@ -175,7 +225,10 @@ export default function NuevaBoletaPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Fecha del gasto</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm font-medium">Fecha del gasto</Label>
+                    {scanned.has("fecha") && <AutoBadge />}
+                  </div>
                   <Input
                     type="date"
                     value={newForm.fecha}
@@ -188,7 +241,10 @@ export default function NuevaBoletaPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Descripción</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium">Descripción</Label>
+                  {scanned.has("descripcion") && <AutoBadge />}
+                </div>
                 <textarea
                   className="w-full px-3 py-2.5 rounded-lg border text-sm bg-background text-foreground resize-none focus:outline-none focus:ring-2"
                   style={{ borderColor: "var(--border)", minHeight: "90px" }}
@@ -222,6 +278,9 @@ export default function NuevaBoletaPage() {
                           return
                         }
                         setSubmitError("")
+                        autoScan(file)
+                      } else {
+                        setScanned(new Set())
                       }
                       setNewForm({ ...newForm, imagen: file })
                     }}

@@ -8,6 +8,7 @@ import {
   eliminarBoleta,
   estadisticas,
 } from "../controllers/boleta.controller"
+import { scanBoleta } from "../utils/boletaScanner"
 
 const tipoEnum = t.Union([
   t.Literal("Traslado"),
@@ -81,6 +82,29 @@ export const boletaRoutes = new Elysia({ prefix: "/boletas" })
           throw new Error("Acceso denegado: se requiere rol empleado o administrador")
         }
       })
+      .post(
+        "/scan",
+        async ({ body, set }) => {
+          const file = body.imagen
+          if (!file.type.startsWith("image/")) {
+            set.status = 400
+            throw new Error("Solo se permiten imágenes para escanear")
+          }
+          if (file.size > 10 * 1024 * 1024) {
+            set.status = 400
+            throw new Error("Imagen demasiado grande (máx 10 MB)")
+          }
+          const buffer = Buffer.from(await file.arrayBuffer())
+          const resultado = await scanBoleta(buffer)
+          return resultado
+        },
+        {
+          body: t.Object({
+            imagen: t.File({ type: ["image/jpeg", "image/png", "image/webp"] }),
+          }),
+          detail: { summary: "Escanear boleta con OCR", tags: ["Boletas"] },
+        }
+      )
       .post(
         "/",
         ({ body, authUser }) => crearBoleta(body, authUser),
