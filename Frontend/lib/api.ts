@@ -170,7 +170,7 @@ export const boletasApi = {
   eliminar: (id: string) =>
     req<{ mensaje: string }>(`/api/boletas/${id}`, { method: "DELETE" }),
 
-  scan: (file: File): Promise<{ monto?: number; fecha?: string; descripcion?: string; tipo?: string }> => {
+  scan: (file: File): Promise<{ valido: boolean; motivo?: string; monto?: number; fecha?: string; descripcion?: string }> => {
     const fd = new FormData()
     fd.append("imagen", file)
     return req("/api/boletas/scan", { method: "POST", body: fd })

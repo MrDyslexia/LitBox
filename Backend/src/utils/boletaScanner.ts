@@ -1,129 +1,195 @@
 import { createWorker } from "tesseract.js"
 import sharp from "sharp"
+import { env } from "../config/env"
+
+const log = (...args: any[]) => { if (env.isDev) console.log("[SCAN]", ...args) }
+
+let scanEnCurso = false
 
 export interface ScanResult {
+  valido: boolean
+  motivo?: string
   monto?: number
   fecha?: string
   descripcion?: string
 }
 
-
 async function preprocesar(buffer: Buffer): Promise<Buffer> {
   return sharp(buffer)
     .rotate()                    // corregir orientación EXIF
-    .grayscale()                 // eliminar color → mejor contraste OCR
-    .normalise()                 // estira histograma → mejora zonas oscuras/claras
-    .sharpen({ sigma: 1.5 })    // enfoca texto borroso
-    .linear(1.4, -30)           // aumenta contraste (multiply + offset)
+    .grayscale()                 // escala de grises
+    .normalise()                 // estira histograma
+    .threshold(140)              // binariza: texto negro queda negro, watermarks/fondos grises → blanco
     .toBuffer()
 }
 
-export async function scanBoleta(imageBuffer: Buffer): Promise<ScanResult> {
-  const procesado = await preprocesar(imageBuffer)
-
+async function extraerTextoConfiable(buffer: Buffer): Promise<{ texto: string; confianza: number; palabras: number } | null> {
+  log("▶ Iniciando Tesseract OCR...")
   const worker = await createWorker("spa", 1, {
     cachePath: "/tmp/tesseract-cache",
     logger: () => {},
   })
 
-  let text = ""
   try {
-    const { data } = await worker.recognize(procesado)
-    text = data.text
+    const { data } = await worker.recognize(buffer)
+
+    const words = data.words ?? []
+    const rawText = (data.text ?? "").trim()
+    const globalConf: number = data.confidence ?? 0
+
+    log(`── ANTES DEL FILTRO ──`)
+    log(`Total palabras: ${words.length} | Confianza global raw: ${globalConf.toFixed(1)}%`)
+    log("Texto raw OCR:\n" + (rawText || "(vacío)"))
+
+    // Caso A: words disponibles → filtrar por confidence por palabra
+    if (words.length >= env.ocr.minUsableWords) {
+      log(`Muestra palabras con su confidence:`)
+      words.slice(0, 30).forEach((w: any) => log(`  "${w.text}" → ${w.confidence.toFixed(1)}%`))
+
+      const palabrasConfiables = words.filter(
+        (w: any) => w.confidence >= env.ocr.wordConfidenceMin && w.text.trim().length > 0
+      )
+      log(`── DESPUÉS DEL FILTRO (conf ≥ ${env.ocr.wordConfidenceMin}) ──`)
+      log(`Aceptadas: ${palabrasConfiables.length} | Rechazadas: ${words.length - palabrasConfiables.length}`)
+
+      if (palabrasConfiables.length < env.ocr.minUsableWords) {
+        log(`✗ Rechazado: insuficientes palabras confiables (${palabrasConfiables.length} < ${env.ocr.minUsableWords})`)
+        return null
+      }
+
+      const confianzaPromedio =
+        palabrasConfiables.reduce((sum: number, w: any) => sum + w.confidence, 0) / palabrasConfiables.length
+
+      log(`Confianza promedio post-filtro: ${confianzaPromedio.toFixed(1)}%`)
+
+      if (confianzaPromedio < env.ocr.docConfidenceMin) {
+        log(`✗ Rechazado: confianza promedio ${confianzaPromedio.toFixed(1)} < ${env.ocr.docConfidenceMin}`)
+        return null
+      }
+
+      const textoLimpio = (data.lines ?? [])
+        .map((line: any) =>
+          (line.words ?? [])
+            .filter((w: any) => w.confidence >= env.ocr.wordConfidenceMin)
+            .map((w: any) => w.text)
+            .join(" ")
+        )
+        .filter((l: string) => l.trim().length > 0)
+        .join("\n")
+
+      log(`── TEXTO LIMPIO PARA LLM (vía words) ──\n` + textoLimpio)
+      return { texto: textoLimpio, confianza: confianzaPromedio, palabras: palabrasConfiables.length }
+    }
+
+    // Caso B: words vacío — usar data.text directamente con confidence global
+    log(`── FALLBACK: words vacío, usando data.text directamente ──`)
+    if (!rawText || rawText.length < 20) {
+      log(`✗ Rechazado: texto vacío o demasiado corto`)
+      return null
+    }
+    if (globalConf < env.ocr.docConfidenceMin) {
+      log(`✗ Rechazado: confianza global ${globalConf.toFixed(1)} < ${env.ocr.docConfidenceMin}`)
+      return null
+    }
+    log(`✓ Aceptado con conf global ${globalConf.toFixed(1)}% — ${rawText.length} chars`)
+    log(`── TEXTO PARA LLM (vía data.text) ──\n` + rawText)
+    return { texto: rawText, confianza: globalConf, palabras: rawText.split(/\s+/).length }
   } finally {
     await worker.terminate()
   }
-
-  const result = parseBoleta(text)
-  console.log("[OCR] Texto extraído:\n", text)
-  console.log("[OCR] Resultado parseado:", result)
-  return result
 }
 
-function parseBoleta(text: string): ScanResult {
-  const result: ScanResult = {}
-  // --- MONTO ---
-  const montoPatterns = [
-    /^[ \t]*total\s+a\s+pagar[ \t]*[^\d\n]{0,10}([\d.]+)/im,
-    /^[ \t]*monto\s+total[ \t]*[^\d\n]{0,10}([\d.]+)/im,
-    // TOTAL al inicio de línea (con posible leading whitespace y chars OCR)
-    /^[ \t]*total[ \t]*[^\d\n]{0,8}([\d.]{4,})/im,
-    // TOTAL en cualquier posición de línea (ej: "La TOTAL: $15.980")
-    /\btotal\s*[^\d\n]{0,8}([\d.]{4,})/im,
-    // OCR errors en negrita: TOTA!, T0TAL, TOTAI, etc.
-    /\btot[a4][l!1i]\s*[^\d\n]{0,8}([\d.]{4,})/im,
-    // Transbank y medios de pago (línea puede tener prefijo OCR basura)
-    /(?:tbk[ \t]+)?(?:debito|crédito|credito|efectivo|tarjeta|pago)[ \t]*[^\d\n]{0,8}([\d.]{4,})/im,
-    /^[ \t]*subtotal[ \t]*[^\d\n]{0,8}([\d.]{4,})/im,
-  ]
-  for (const pattern of montoPatterns) {
-    const m = text.match(pattern)
-    console.log(`[OCR][monto] pattern=${pattern} match=${JSON.stringify(m?.[0])} group=${m?.[1]}`)
-    if (m) {
-      const num = parseInt(m[1].replace(/\./g, ""), 10)
-      if (!isNaN(num) && num >= 100 && num <= 99_999_999) {
-        result.monto = num
-        break
-      }
-    }
-  }
+async function extraerConOllama(texto: string): Promise<ScanResult> {
+  log(`▶ Enviando a Ollama (${env.ocr.ollamaModel}) — timeout ${env.ocr.ollamaTimeoutMs}ms...`)
+  const prompt = `Eres un extractor de datos de boletas y tickets de compra chilenos.
 
-  // Fallback: mayor $ en el texto (el total es generalmente el monto más alto)
-  if (!result.monto) {
-    const allMatches = [...text.matchAll(/\$[ \t]*([\d.]{4,})/g)]
-    const candidates = allMatches
-      .map((m) => parseInt(m[1].replace(/\./g, ""), 10))
-      .filter((n) => !isNaN(n) && n >= 1000 && n <= 99_999_999)
-    if (candidates.length > 0) {
-      result.monto = Math.max(...candidates)
-      console.log("[OCR][monto] fallback mayor $:", result.monto)
-    }
-  }
+Se te entrega texto extraído por OCR con posibles errores tipográficos.
 
-  // --- FECHA --- (YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY)
-  const isoMatch = text.match(/(\d{4})-(\d{2})-(\d{2})/)
-  if (isoMatch) {
-    const iso = `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`
-    const parsed = new Date(iso + "T00:00:00")
-    if (!isNaN(parsed.getTime()) && parsed <= new Date()) {
-      result.fecha = iso
-    }
-  }
-  if (!result.fecha) {
-    const dmyMatch = text.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)
-    if (dmyMatch) {
-      const iso = `${dmyMatch[3]}-${dmyMatch[2].padStart(2, "0")}-${dmyMatch[1].padStart(2, "0")}`
-      const parsed = new Date(iso + "T00:00:00")
-      if (!isNaN(parsed.getTime()) && parsed <= new Date()) {
-        result.fecha = iso
-      }
-    }
-  }
+CRITERIO DE VALIDEZ: Retorna valido:true si puedes extraer AL MENOS UN campo útil (monto, fecha o nombre de negocio). Solo retorna valido:false si el texto es completamente incoherente y no contiene absolutamente ningún dato recuperable.
 
-  // --- DESCRIPCION ---
-  // Prioridad: línea con LTDA / S.A. / SPA / LIMITADA (razón social)
-  // Fallback: línea después de "dirección:" o primera línea limpia larga
-  const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length >= 5)
+Extrae los campos que PUEDAS determinar con razonable confianza. Omite los que no puedas:
+- monto: total final en CLP como entero. Busca TOTAL o SUBTOTAL al final. En Chile el punto es separador de miles: 8.300 = 8300, 88.407 = 88407
+- fecha: formato YYYY-MM-DD. Busca patrones como "14/12/2014", "2022-02-12", "Fecha:"
+- descripcion: nombre del negocio o empresa, máximo 80 caracteres. Busca "LTDA", "S.A.", "SPA" o el nombre al inicio del texto
 
-  // Prioridad 1: línea con indicador de razón social (LTDA, S.A., etc.)
-  const razonSocial = lines.find((l) =>
-    /\b(ltda|s\.a\.|spa|limitada|s\.p\.a\.|eirl|sociedad)\b/i.test(l) &&
-    /[a-zA-ZáéíóúÁÉÍÓÚñÑ]{4,}/.test(l)
-  )
+Texto OCR:
+${texto}
 
-  if (razonSocial) {
-    result.descripcion = `Gasto en ${razonSocial.substring(0, 120)}`
-  } else {
-    // Fallback: primera línea con ≥2 palabras de ≥4 letras (descarta ruido OCR)
-    const cleanLine = lines.find((l) => {
-      if (l.length < 8 || l.length > 120) return false
-      const palabrasLimpias = l.split(/\s+/).filter((w) =>
-        (w.match(/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/g) || []).length >= 4
-      )
-      return palabrasLimpias.length >= 2
+Responde SOLO con JSON, sin texto adicional:
+Con datos: {"valido":true,"monto":8300,"fecha":"2022-02-12","descripcion":"Britt Chile Ltda"}
+Parcial: {"valido":true,"monto":8300,"descripcion":"Britt Chile Ltda"}
+Inválido: {"valido":false,"motivo":"razón específica"}`
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), env.ocr.ollamaTimeoutMs)
+
+  try {
+    const res = await fetch(`${env.ocr.ollamaUrl}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: env.ocr.ollamaModel,
+        prompt,
+        stream: false,
+        format: "json",
+        options: { temperature: 0.1 },
+      }),
+      signal: controller.signal,
     })
-    if (cleanLine) result.descripcion = `Gasto en ${cleanLine.substring(0, 120)}`
-  }
 
-  return result
+    if (!res.ok) throw new Error(`Ollama respondió ${res.status}`)
+
+    const json = await res.json() as { response: string }
+    log(`── RESPUESTA LLM ──`)
+    log(json.response)
+
+    // Extraer JSON de la respuesta (puede venir con texto extra)
+    const match = json.response.match(/\{[\s\S]*\}/)
+    if (!match) throw new Error("LLM no devolvió JSON válido")
+
+    const resultado = JSON.parse(match[0]) as ScanResult
+    log("✓ Resultado final:", resultado)
+    return resultado
+
+  } catch (err: any) {
+    if (err.name === "AbortError") {
+      log("✗ Timeout Ollama")
+      return { valido: false, motivo: "El análisis tardó demasiado, intenta con otra imagen" }
+    }
+    log("✗ Error Ollama:", err.message)
+    return { valido: false, motivo: "Error al analizar la imagen" }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+export async function scanBoleta(imageBuffer: Buffer): Promise<ScanResult> {
+  if (scanEnCurso) {
+    log("✗ Scan ya en curso — rechazando request concurrente")
+    return { valido: false, motivo: "Ya hay un análisis en proceso, espera un momento" }
+  }
+  scanEnCurso = true
+  try {
+    log("═══════════════════════════════")
+    log("Iniciando scan de boleta")
+
+    const procesado = await preprocesar(imageBuffer)
+    log("✓ Preprocesado de imagen completado")
+
+    const ocr = await extraerTextoConfiable(procesado)
+    if (!ocr) {
+      log("✗ Imagen rechazada por baja calidad OCR")
+      return { valido: false, motivo: "La imagen no es legible, intenta con una foto más nítida" }
+    }
+
+    const resultado = await extraerConOllama(ocr.texto)
+    log("Scan finalizado:", resultado)
+    log("═══════════════════════════════")
+    return resultado
+  } catch (err: any) {
+    log("✗ Error inesperado en scan:", err.message)
+    return { valido: false, motivo: "Error interno al procesar la imagen" }
+  } finally {
+    scanEnCurso = false
+  }
 }

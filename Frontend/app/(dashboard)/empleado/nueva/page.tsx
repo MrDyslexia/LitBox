@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { CheckCircle, Upload, ScanLine, Loader2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -37,6 +37,7 @@ export default function NuevaBoletaPage() {
   const [submitError, setSubmitError] = useState("")
   const [scanning, setScanning] = useState(false)
   const [scanned, setScanned] = useState<Set<string>>(new Set())
+  const scanningRef = useRef(false)
 
   useEffect(() => {
     if (!newForm.imagen) { setPreviewUrl(null); return }
@@ -48,10 +49,17 @@ export default function NuevaBoletaPage() {
 
   const autoScan = async (file: File) => {
     if (!file.type.startsWith("image/")) return
+    if (scanningRef.current) return
+    scanningRef.current = true
     setScanning(true)
     setScanned(new Set())
+    setSubmitError("")
     try {
       const resultado = await boletasApi.scan(file)
+      if (!resultado.valido) {
+        setSubmitError(resultado.motivo ?? "No se pudo leer la boleta, completa los datos manualmente.")
+        return
+      }
       const filled = new Set<string>()
       setNewForm((prev) => {
         const next = { ...prev }
@@ -62,9 +70,10 @@ export default function NuevaBoletaPage() {
       })
       setScanned(filled)
     } catch {
-      // scan silently fails — user fills manually
+      setSubmitError("No se pudo analizar la imagen, completa los datos manualmente.")
     } finally {
       setScanning(false)
+      scanningRef.current = false
     }
   }
 

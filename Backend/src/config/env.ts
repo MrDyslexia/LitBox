@@ -41,8 +41,8 @@ export const env = {
   },
   ocr: {
     ollamaUrl:          process.env.OLLAMA_URL              ?? "http://localhost:11435",
-    ollamaModel:        process.env.OLLAMA_MODEL            ?? "qwen2.5:1.5b",
-    ollamaTimeoutMs:    Number(process.env.OLLAMA_TIMEOUT   ?? 30_000),
+    ollamaModel:        process.env.OLLAMA_MODEL            ?? "qwen2.5:7b",
+    ollamaTimeoutMs:    Number(process.env.OLLAMA_TIMEOUT   ?? 90_000),
     wordConfidenceMin:  Number(process.env.OCR_WORD_CONF    ?? 40),
     docConfidenceMin:   Number(process.env.OCR_DOC_CONF     ?? 35),
     minUsableWords:     Number(process.env.OCR_MIN_WORDS    ?? 10),
