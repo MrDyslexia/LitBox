@@ -32,11 +32,11 @@ info "Creando sesión tmux '$SESSION'..."
 
 # Ventana 0: Backend
 tmux new-session -d -s "$SESSION" -n "Backend" -x 220 -y 50
-tmux send-keys -t "$SESSION:Backend" "cd '$BACKEND' && bun dev" Enter
+tmux send-keys -t "$SESSION:Backend" "cd '$BACKEND' && bun start" Enter
 
 # Ventana 1: Frontend
 tmux new-window -t "$SESSION" -n "Frontend"
-tmux send-keys -t "$SESSION:Frontend" "cd '$FRONTEND' && bun dev" Enter
+tmux send-keys -t "$SESSION:Frontend" "cd '$FRONTEND' && bun run build && bun run start" Enter
 
 # ── Esperar que los servicios arranquen ──────────────────────────────────────
 echo ""

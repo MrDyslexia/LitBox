@@ -1,0 +1,19 @@
+{
+  "name": "litbox-performance",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "audit": "npx tsx audit.ts",
+    "audit:prod": "FRONTEND_URL=https://provider.blocktype.cl npx tsx audit.ts"
+  },
+  "dependencies": {
+    "lighthouse": "^12.6.1",
+    "playwright": "^1.52.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia"
 import { jwtPlugin, authMiddleware } from "../middleware/auth"
+import { env } from "../config/env"
 import {
   login,
   getMe,
@@ -17,6 +18,9 @@ interface RateBucket { count: number; resetAt: number }
 const rateBuckets = new Map<string, RateBucket>()
 
 function checkRateLimit(key: string, maxRequests: number, windowMs: number) {
+  // En desarrollo no hay proxy → todos comparten mismo IP → rate limit bloquea al dev
+  if (env.isDev) return
+
   const now = Date.now()
   const bucket = rateBuckets.get(key)
 
@@ -32,7 +36,11 @@ function checkRateLimit(key: string, maxRequests: number, windowMs: number) {
 }
 
 function getIp(request: Request): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown"
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    request.headers.get("x-real-ip")?.trim() ??
+    "unknown"
+  )
 }
 
 const infoBancariaSchema = t.Object({

@@ -69,7 +69,7 @@ export default function GestorHistorialPage() {
   useBoletasSync(loadData)
 
   const montoPagado = stats?.montoPagado ?? 0
-  const totalPagadas = stats?.pagadas ?? 0
+  const totalPagadas = stats?.pagada ?? 0
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-5xl">

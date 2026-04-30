@@ -7,13 +7,19 @@ import { connectDB } from "../config/database"
 import { User } from "../models/User"
 import { Boleta } from "../models/Boleta"
 import { AuditLog } from "../models/AuditLog"
+import { Counter } from "../models/Counter"
 import type { BoletaEstado } from "../types"
 
 await connectDB()
 console.log("🌱 Iniciando seed completo...\n")
 
 // ─── Limpiar colecciones ──────────────────────────────────────────────────────
-await Promise.all([User.deleteMany({}), Boleta.deleteMany({}), AuditLog.deleteMany({})])
+await Promise.all([
+  User.deleteMany({}),
+  Boleta.deleteMany({}),
+  AuditLog.deleteMany({}),
+  Counter.deleteMany({}),
+])
 console.log("  ✓ Colecciones limpiadas")
 
 // ─── Imagen de ejemplo (copiada a uploads/) ───────────────────────────────────
@@ -32,7 +38,7 @@ const [admin, auditor1, auditor2, gestor, ...empleados] = await User.create([
   { primerNombre: "Carlos",    primerApellido: "Ramírez",   rut: "11.234.567-8", email: "auditor@empresa.com",          password: "demo1234", rol: "auditor" },
   { primerNombre: "Sofía",     primerApellido: "Herrera",   rut: "10.123.456-7", email: "sofia.herrera@empresa.com",    password: "demo1234", rol: "auditor" },
   // Gestores
-  { primerNombre: "Roberto",   primerApellido: "Fuentes",   rut: "9.876.543-2",  email: "gestor@empresa.com",           password: "demo1234", rol: "gestor" },
+  { primerNombre: "Roberto",   primerApellido: "Fuentes",   rut: "9.876.543-2",  email: "gestor@empresa.com",           password: "demo1234", rol: "gestor",  esNuevo: false, infoBancaria: { banco: "Banco Estado", tipoCuenta: "corriente", numeroCuenta: "12345678" } },
   // Empleados — esNuevo: true para testing del protocolo de primer acceso
   { primerNombre: "María",     primerApellido: "González",  rut: "8.765.432-1",  email: "empleado@empresa.com",         password: "demo1234", rol: "empleado", esNuevo: true },
   { primerNombre: "Juan",      primerApellido: "Pérez",     rut: "7.654.321-k",  email: "juan.perez@empresa.com",       password: "demo1234", rol: "empleado", esNuevo: true },

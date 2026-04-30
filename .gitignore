@@ -12,3 +12,8 @@ ESTADO_SISTEMA.md
 .backend.pid
 .frontend.pid
 TEST_REPORT.md
+REQUISITOS_DESPLIEGUE.md
+/performance/node_modules/
+./performance/node_modules/
+/performance/.env
+/performance/reports/*
